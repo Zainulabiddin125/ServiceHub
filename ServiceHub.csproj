@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Views\pages\docs\browser-support.html" />
+    <Content Include="Views\pages\docs\color-mode.html" />
+    <Content Include="Views\pages\docs\components\main-header.html" />
+    <Content Include="Views\pages\docs\components\main-sidebar.html" />
+    <Content Include="Views\pages\docs\faq.html" />
+    <Content Include="Views\pages\docs\how-to-contribute.html" />
+    <Content Include="Views\pages\docs\introduction.html" />
+    <Content Include="Views\pages\docs\javascript\treeview.html" />
+    <Content Include="Views\pages\docs\layout.html" />
+    <Content Include="Views\pages\docs\license.html" />
+    <Content Include="Views\pages\examples\lockscreen.html" />
+    <Content Include="Views\pages\examples\login-v2.html" />
+    <Content Include="Views\pages\examples\login.html" />
+    <Content Include="Views\pages\examples\register-v2.html" />
+    <Content Include="Views\pages\examples\register.html" />
+    <Content Include="Views\pages\forms\general.html" />
+    <Content Include="Views\pages\generate\theme.html" />
+    <Content Include="Views\pages\index.html" />
+    <Content Include="Views\pages\index2.html" />
+    <Content Include="Views\pages\index3.html" />
+    <Content Include="Views\pages\layout\collapsed-sidebar.html" />
+    <Content Include="Views\pages\layout\fixed-sidebar.html" />
+    <Content Include="Views\pages\layout\layout-custom-area.html" />
+    <Content Include="Views\pages\layout\layout-rtl.html" />
+    <Content Include="Views\pages\layout\logo-switch.html" />
+    <Content Include="Views\pages\layout\sidebar-mini.html" />
+    <Content Include="Views\pages\layout\unfixed-sidebar.html" />
+    <Content Include="Views\pages\tables\simple.html" />
+    <Content Include="Views\pages\UI\general.html" />
+    <Content Include="Views\pages\UI\icons.html" />
+    <Content Include="Views\pages\UI\timeline.html" />
+    <Content Include="Views\pages\widgets\cards.html" />
+    <Content Include="Views\pages\widgets\info-box.html" />
+    <Content Include="Views\pages\widgets\small-box.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+  </ItemGroup>
+
+</Project>

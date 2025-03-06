@@ -1,0 +1,173 @@
+﻿<style>
+    /* Add left margin for 2nd level menu items */
+    .nav-treeview .nav-item {
+        /* Adjust the margin as needed */
+        margin-left: 20px !important; 
+    }
+
+    /* Style for active menu item */
+    .nav-item .nav-link.active {
+        /* Primary color */
+        background-color: #007bff !important; 
+        /* Text color for active item */
+        color: white !important; 
+    }
+
+    /* Hover effect for menu items */
+    .nav-item .nav-link:hover {
+        /* Darker shade for hover */
+        background-color: #0056b3 !important;
+        color: white !important;
+    }
+
+    /* Style for active child menu item */
+    .nav-treeview .nav-item .nav-link.active {
+        /* Primary color */
+        background-color: #007bff !important; 
+        /* Text color for active item */
+        color: white !important; 
+    }
+
+    /* Ensure the parent menu remains open when a child is active */
+    .nav-item.menu-open > .nav-treeview {
+        /* Force the child menu to stay open */
+        display: block !important; 
+    }
+</style>
+
+
+<!--begin::Sidebar-->
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+    <!--begin::Sidebar Brand-->
+    <div class="sidebar-brand">
+        <!--begin::Brand Link-->
+        <a href="./index.html" class="brand-link">
+            <!--begin::Brand Image-->
+            <img src="/cust_theme_comp/assets/img/vp_icon.png" alt="AdminLTE Logo" class="brand-image opacity-75 shadow">
+            <!--end::Brand Image-->
+            <!--begin::Brand Text-->
+            <span class="brand-text fw-light">Service Hub</span>
+            <!--end::Brand Text-->
+        </a>
+        <!--end::Brand Link-->
+    </div>
+    <!--end::Sidebar Brand-->
+    <!--begin::Sidebar Wrapper-->
+    <div class="sidebar-wrapper">
+        <nav class="mt-2">
+            <!--begin::Sidebar Menu-->
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon bi bi-speedometer2"></i>
+                        <p>
+                            Dashboard
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-area ="" asp-controller="Home" asp-action="Index" class="nav-link">
+                                <i class="nav-icon bi bi-house-door-fill"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Attendance Machine -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon bi bi-device-ssd"></i>
+                        <p>
+                            Attendance Machine
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Create" class="nav-link">
+                                <i class="nav-icon bi bi-plus-circle"></i>
+                                <p>Add New Machine</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Index" class="nav-link">
+                                <i class="nav-icon bi bi-list-check"></i>
+                                <p>Machines View</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Machine Logs -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon bi bi-file-earmark-text"></i>
+                        <p>
+                            Machine Logs
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-area="HR" asp-controller="AttendanceMachineConnectionLogs" asp-action="Index" class="nav-link">
+                                <i class="nav-icon bi bi-clock-history"></i>
+                                <p>Logs View</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Swaps -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon bi bi-clock-history"></i>
+                        <p>
+                            Attendance Swaps
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-area="HR" asp-controller="HRSwapRecords" asp-action="Index" class="nav-link">
+                                <i class="nav-icon bi bi-repeat"></i>
+                                <p>Swaps View</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+            </ul>
+            <!--end::Sidebar Menu-->
+        </nav>
+    </div>
+    <!--end::Sidebar Wrapper-->
+</aside> 
+<!--end::Sidebar-->
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+         $(document).ready(function() {
+        // Retrieve the active menu item from localStorage
+        var activeMenu = localStorage.getItem('activeMenu');
+        if (activeMenu) {
+            $('.nav-link').removeClass('active');
+            $(activeMenu).addClass('active');
+            $(activeMenu).closest('.nav-treeview').closest('.nav-item').addClass('menu-open');
+        }
+        // Handle click event on menu items
+        $('.nav-link').on('click', function() {
+            // Remove active class from all menu items
+            $('.nav-link').removeClass('active');
+            // Add active class to the clicked menu item
+            $(this).addClass('active');
+            // Ensure the parent menu stays open
+            $(this).closest('.nav-treeview').closest('.nav-item').addClass('menu-open');
+            // Store the active menu item in localStorage
+            localStorage.setItem('activeMenu', '#' + $(this).attr('id'));
+        });
+    });
+</script>

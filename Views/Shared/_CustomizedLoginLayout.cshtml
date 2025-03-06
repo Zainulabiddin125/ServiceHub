@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ServiceHub</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ServiceHub.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body {
+            background: url('/images/login_background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        .login-card {
+            /* Pure white background */
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+            max-width: 550px;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .login-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.4);
+            }
+
+        .card-header {
+            /* Pure white background */
+            background: white; 
+            border-bottom: none;
+            padding: 0;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+            .nav-tabs .nav-item {
+                flex: 1;
+                text-align: center;
+            }
+
+            .nav-tabs .nav-link {
+                border: none;
+                color: #333;
+                font-weight: 500;
+                transition: color 0.3s ease, background-color 0.3s ease;
+                padding: 10px 0;
+                width: 100%;
+                border-radius: 0;
+            }
+
+                .nav-tabs .nav-link.active {
+                    color: #007bff;
+                    /* Light blue background for active tab */
+                    background: rgba(0, 123, 255, 0.1);
+                    /* Thicker border for active tab */
+                    border-bottom: 3px solid #007bff; 
+                    /* Bold text for active tab */
+                    font-weight: 600; 
+                }
+
+                .nav-tabs .nav-link:hover {
+                    color: #007bff;
+                    /* Light hover effect */
+                    background: rgba(0, 123, 255, 0.05);
+                }
+
+        .card-body {
+            /* Pure white background */
+            background: white; 
+            padding: 20px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+            }
+
+        .form-control {
+            border-radius: 25px;
+            padding: 10px 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .form-control:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 10px rgba(0, 123, 255, 0.25);
+            }
+
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+
+        .text-danger {
+            font-size: 0.875rem;
+        }
+
+        .checkbox {
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @@media(max - width: 576px) {
+                .login-card {
+                    padding: 20px;
+                    max-width: 90%;
+                }
+
+                .form-control {
+                    padding: 8px 16px;
+                }
+
+                .btn-primary {
+                    padding: 8px 16px;
+                }
+            }
+
+            #login-submit {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.5rem 1rem;
+                transition: background-color 0.3s ease;
+            }
+
+                #login-submit:hover {
+                    background-color: #0056b3; /* Darker blue on hover */
+                }
+
+            .fa-sign-in-alt {
+                color: white; /* Icon color */
+                margin-right: 0.5rem; /* Spacing between icon and text */
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="login-card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Identity/Account/Login">Log In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Identity/Account/Register">Register</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                @RenderBody()
+            </div>
+        </div>
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+        <script>
+            $(document).ready(function () {
+                // Get the current URL path
+                const currentPage = window.location.pathname; 
+                // Loop through each tab link
+                $('.nav-tabs .nav-link').each(function () {
+                    const $this = $(this);
+                    // Get the tab's href
+                    const tabHref = $this.attr('href').toLowerCase(); 
+                    // Check if the current page matches the tab's href
+                    if (currentPage.toLowerCase().includes(tabHref)) {
+                         // Add the 'active' class to the matching tab
+                        $this.addClass('active');
+                    } else {
+                        // Remove the 'active' class from other tabs
+                        $this.removeClass('active'); 
+                    }
+                });
+            });
+        </script>
+        @await RenderSectionAsync("Scripts", required: false)
+    </body>
+    </html>
