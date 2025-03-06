@@ -21,8 +21,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 });
 
-
-
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -49,19 +47,14 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-
-
 // Add area routing
 app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller=AttendanceMachine}/{action=Index}/{id?}");
 
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-
 
 app.Use(async (context, next) =>
 {
@@ -74,11 +67,8 @@ app.Use(async (context, next) =>
         context.Response.Redirect("/Identity/Account/Login");
         return;
     }
-
     await next();
 });
-
-
 
 app.MapRazorPages();
 

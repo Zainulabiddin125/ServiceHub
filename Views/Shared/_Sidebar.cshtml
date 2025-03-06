@@ -57,10 +57,9 @@
         <nav class="mt-2">
             <!--begin::Sidebar Menu-->
             <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
-
                 <!-- Dashboard -->
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" id="dashboard">
                         <i class="nav-icon bi bi-speedometer2"></i>
                         <p>
                             Dashboard
@@ -69,7 +68,7 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a asp-area ="" asp-controller="Home" asp-action="Index" class="nav-link">
+                            <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link" id="dashboard-home">
                                 <i class="nav-icon bi bi-house-door-fill"></i>
                                 <p>Dashboard</p>
                             </a>
@@ -79,7 +78,7 @@
 
                 <!-- Attendance Machine -->
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" id="attendance-machine">
                         <i class="nav-icon bi bi-device-ssd"></i>
                         <p>
                             Attendance Machine
@@ -88,13 +87,13 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Create" class="nav-link">
+                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Create" class="nav-link" id="add-machine">
                                 <i class="nav-icon bi bi-plus-circle"></i>
                                 <p>Add New Machine</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Index" class="nav-link">
+                            <a asp-area="HR" asp-controller="AttendanceMachine" asp-action="Index" class="nav-link" id="view-machines">
                                 <i class="nav-icon bi bi-list-check"></i>
                                 <p>Machines View</p>
                             </a>
@@ -104,7 +103,7 @@
 
                 <!-- Machine Logs -->
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" id="machine-logs">
                         <i class="nav-icon bi bi-file-earmark-text"></i>
                         <p>
                             Machine Logs
@@ -113,7 +112,7 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a asp-area="HR" asp-controller="AttendanceMachineConnectionLogs" asp-action="Index" class="nav-link">
+                            <a asp-area="HR" asp-controller="AttendanceMachineConnectionLogs" asp-action="Index" class="nav-link" id="view-logs">
                                 <i class="nav-icon bi bi-clock-history"></i>
                                 <p>Logs View</p>
                             </a>
@@ -123,7 +122,7 @@
 
                 <!-- Swaps -->
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" id="attendance-swaps">
                         <i class="nav-icon bi bi-clock-history"></i>
                         <p>
                             Attendance Swaps
@@ -132,14 +131,13 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a asp-area="HR" asp-controller="HRSwapRecords" asp-action="Index" class="nav-link">
+                            <a asp-area="HR" asp-controller="HRSwapRecords" asp-action="Index" class="nav-link" id="view-swaps">
                                 <i class="nav-icon bi bi-repeat"></i>
                                 <p>Swaps View</p>
                             </a>
                         </li>
                     </ul>
                 </li>
-
             </ul>
             <!--end::Sidebar Menu-->
         </nav>
@@ -148,24 +146,34 @@
 </aside> 
 <!--end::Sidebar-->
 <!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+<script src="/cust_theme_comp/js/jquery-3.7.0.min.js"></script>
 <script>
-         $(document).ready(function() {
+    $(document).ready(function () {
         // Retrieve the active menu item from localStorage
         var activeMenu = localStorage.getItem('activeMenu');
         if (activeMenu) {
+            // Remove active class from all menu items
             $('.nav-link').removeClass('active');
+            // Add active class to the stored menu item
             $(activeMenu).addClass('active');
-            $(activeMenu).closest('.nav-treeview').closest('.nav-item').addClass('menu-open');
+            // Ensure the parent menu stays open
+            $(activeMenu).closest('.nav-treeview').show();
+            $(activeMenu).closest('.nav-item').addClass('menu-open');
         }
         // Handle click event on menu items
-        $('.nav-link').on('click', function() {
+        $('.nav-link').on('click', function () {
             // Remove active class from all menu items
             $('.nav-link').removeClass('active');
             // Add active class to the clicked menu item
             $(this).addClass('active');
             // Ensure the parent menu stays open
-            $(this).closest('.nav-treeview').closest('.nav-item').addClass('menu-open');
+            var parentTreeview = $(this).closest('.nav-treeview');
+            var parentNavItem = parentTreeview.closest('.nav-item');
+            if (parentTreeview.length) {
+                parentTreeview.show();
+                parentNavItem.addClass('menu-open');
+            }
             // Store the active menu item in localStorage
             localStorage.setItem('activeMenu', '#' + $(this).attr('id'));
         });

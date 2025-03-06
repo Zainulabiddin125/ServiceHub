@@ -756,3 +756,62 @@
     <!--end::App Content-->
 </main> 
 <!--end::App Main-->
+
+
+                            <script>
+               $(document).ready(function () {
+            // Check if the sales-chart element exists
+            const salesChartElement = document.querySelector("#sales-chart");
+
+            if (!salesChartElement) {
+                console.error("Element with id 'sales-chart' not found!");
+                return; // Exit if the element is not found
+            }
+
+            // Chart options
+            const sales_chart_options = {
+                series: [{
+                    name: "Digital Goods",
+                    data: [28, 48, 40, 19, 86, 27, 90],
+                }],
+                chart: {
+                    height: 180,
+                    type: "area",
+                    toolbar: {
+                        show: false,
+                    },
+                },
+                legend: {
+                    show: false,
+                },
+                colors: ["#0d6efd", "#20c997"],
+                dataLabels: {
+                    enabled: false,
+                },
+                stroke: {
+                    curve: "smooth",
+                },
+                xaxis: {
+                    type: "datetime",
+                    categories: [
+                        "2023-01-01",
+                        "2023-02-01",
+                        "2023-03-01",
+                        "2023-04-01",
+                        "2023-05-01",
+                        "2023-06-01",
+                        "2023-07-01",
+                    ],
+                },
+                tooltip: {
+                    x: {
+                        format: "MMMM yyyy",
+                    },
+                },
+            };
+
+            // Initialize and render the chart
+            const sales_chart = new ApexCharts(salesChartElement, sales_chart_options);
+            sales_chart.render();
+        });
+    </script>
