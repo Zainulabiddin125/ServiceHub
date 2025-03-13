@@ -17,9 +17,17 @@ namespace ServiceHub.Areas.HR.Controllers
         {
             return View();
         }
+        public async Task<IActionResult> GetMachineIPs()
+        {
+            var machineIPs = await _dbcontext.AttendenceMachines
+                .Select(m => m.IpAddress)
+                .Distinct()
+                .ToListAsync();
 
+            return Json(machineIPs);
+        }
         [HttpPost]
-        public async Task<IActionResult> GetAttendanceRecords()
+        public async Task<IActionResult> GetAttendanceRecords(string ipAddress = null)
         {
             var request = HttpContext.Request.Form;
             // DataTables parameters
@@ -32,10 +40,17 @@ namespace ServiceHub.Areas.HR.Controllers
 
             int pageSize = length != null ? Convert.ToInt32(length) : 10;
             int skip = start != null ? Convert.ToInt32(start) : 0;
+
+         
             var query = _dbcontext.HR_Swap_Record
                 .OrderByDescending(m => m.PK_line_id)
-                .Take(5000)
                 .AsQueryable();
+
+            // Apply IP filter if provided
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                query = query.Where(m => m.Machine_IP == ipAddress);
+            }
 
             // Apply search filter
             if (!string.IsNullOrEmpty(searchValue))
@@ -97,8 +112,5 @@ namespace ServiceHub.Areas.HR.Controllers
                 data = data
             });
         }
-
-
-
     }
 }
