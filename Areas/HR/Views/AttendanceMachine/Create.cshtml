@@ -37,7 +37,7 @@
                                     <span asp-validation-for="Name" class="text-danger"></span>
                                 </div>
                                 <div class="form-group form-group-margin">
-                                    <label asp-for="IpAddress" class="control-label"></label>
+                                    <label asp-for="IpAddress" class="control-label">IP Address</label>
                                     <input asp-for="IpAddress" class="form-control" />
                                     <span asp-validation-for="IpAddress" class="text-danger"></span>
                                 </div>
@@ -45,7 +45,7 @@
 
                             <div class="col-md-4">
                                 <div class="form-group form-group-margin">
-                                    <label asp-for="DeviceModel" class="control-label"></label>
+                                    <label asp-for="DeviceModel" class="control-label">Device Model</label>
                                     <input asp-for="DeviceModel" class="form-control" />
                                     <span asp-validation-for="DeviceModel" class="text-danger"></span>
                                 </div>
@@ -58,9 +58,9 @@
 
                             <div class="col-md-4">
                                 <div class="form-group form-group-margin">
-                                    <label asp-for="SerialNumber" class="control-label"></label>
-                                    <input asp-for="SerialNumber" class="form-control" />
-                                    <span asp-validation-for="SerialNumber" class="text-danger"></span>
+                                    <label asp-for="Location" class="control-label"></label>
+                                    <input asp-for="Location" class="form-control" />
+                                    <span asp-validation-for="Location" class="text-danger"></span>
                                 </div>
                                 <div class="form-group form-group-margin mt-5">
                                     <label asp-for="IsActive" class="form-check-label">Active</label>
@@ -88,7 +88,7 @@
                             <div class="col-12">
                                 <div class="form-group form-group-margin">
                                     <input type="submit" value="Create" class="btn btn-primary" />
-                                    <a class="btn btn-primary" asp-action="Index">Back to List</a>
+                                    <a class="btn btn-success" asp-action="Index">List</a>
                                 </div>
                             </div>
                         </div>

@@ -82,8 +82,9 @@
                             <th>IP Address</th>
                             <th>Port</th>
                             <th>Description</th>
+                            <th>Location</th>
                             <th>Active</th>
-                            <th>Fetch All Record</th>
+                            <th>Fetch Records</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -110,6 +111,7 @@
                     { "data": "ipAddress" },
                     { "data": "port" },
                     { "data": "description" },
+                    { "data": "location" },
                     {
                         "data": "isActive",
                         "render": function (data) {
@@ -119,7 +121,7 @@
                     {
                         "data": "isFetchAll",
                         "render": function (data) {
-                            return data ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-danger">No</span>';
+                            return data ? '<span class="badge bg-success">All</span>' : '<span class="badge bg-success">Latest</span>';
                         }
                     },
                     {

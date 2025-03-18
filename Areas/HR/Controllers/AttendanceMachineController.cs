@@ -43,7 +43,8 @@ namespace ServiceHub.Areas.HR.Controllers
                 query = query.Where(m =>
                     m.Name.Contains(searchValue) ||
                     m.IpAddress.Contains(searchValue) ||
-                    m.Description.Contains(searchValue));
+                    m.Description.Contains(searchValue) ||
+                    m.Location.Contains(searchValue));
             }
 
             // Apply sorting
@@ -56,6 +57,9 @@ namespace ServiceHub.Areas.HR.Controllers
                         break;
                     case "ipAddress":
                         query = sortDirection == "asc" ? query.OrderBy(m => m.IpAddress) : query.OrderByDescending(m => m.IpAddress);
+                        break;
+                    case "location":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Location) : query.OrderByDescending(m => m.Location);
                         break;
                         // Add more cases for other columns
                 }
@@ -76,6 +80,7 @@ namespace ServiceHub.Areas.HR.Controllers
                     ipAddress = m.IpAddress,
                     port = m.Port,
                     description = m.Description,
+                    location = m.Location,
                     isActive = m.IsActive,
                     isFetchAll = m.IsFetchAll
                 })
@@ -98,9 +103,8 @@ namespace ServiceHub.Areas.HR.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,IpAddress,Port,IsActive,IsFetchAll,SerialNumber,Description,DeviceModel,CreatedAt,LastUpdated")] AttendanceMachine attendanceMachine)
-        {
-           
+        public async Task<IActionResult> Create([Bind("Id,Name,IpAddress,Port,IsActive,IsFetchAll,Location,Description,DeviceModel,CreatedAt,LastUpdated")] AttendanceMachine attendanceMachine)
+        {           
 
             if (ModelState.IsValid)
             {
@@ -135,7 +139,7 @@ namespace ServiceHub.Areas.HR.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,IpAddress,Port,IsActive,IsFetchAll,SerialNumber,Description,DeviceModel,CreatedAt,LastUpdated")] AttendanceMachine attendanceMachine)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,IpAddress,Port,IsActive,IsFetchAll,Location,Description,DeviceModel,CreatedAt,LastUpdated")] AttendanceMachine attendanceMachine)
         {
             if (id != attendanceMachine.Id)
             {

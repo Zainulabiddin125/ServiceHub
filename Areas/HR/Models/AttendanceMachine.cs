@@ -18,12 +18,8 @@ namespace ServiceHub.Areas.HR.Models
         [Range(1, 65535, ErrorMessage = "Port must be between 1 and 65535.")]
         public int Port { get; set; }       
         public bool IsActive { get; set; } = false;       
-        public bool IsFetchAll { get; set; } = false;
-
-        [StringLength(100, ErrorMessage = "Serial Number cannot exceed 100 characters.")]
-        public string? SerialNumber { get; set; }
-
-        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
+        public bool IsFetchAll { get; set; } = false;   
+        public string? Location { get; set; }
         public string? Description { get; set; }
 
         [StringLength(100, ErrorMessage = "Device Model cannot exceed 100 characters.")]
