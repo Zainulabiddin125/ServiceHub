@@ -9,13 +9,13 @@ var connectionString = builder.Configuration.GetConnectionString("ServiceHubCont
 
 builder.Services.AddDbContext<ServiceHubContext>(options => options.UseSqlServer(connectionString));
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<ServiceHubContext>();
+builder.Services.AddDefaultIdentity<ApplicationUser>().AddEntityFrameworkStores<ServiceHubContext>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Identity/Account/Login"; // Redirect unauthenticated users to login
-    options.LogoutPath = "/Identity/Account/Logout";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.LoginPath = $"/Identity/Account/Login"; 
+    options.LogoutPath = $"/Identity/Account/Logout";
+    options.AccessDeniedPath = $"/Identity/Account/AccessDenied";
     options.Cookie.HttpOnly = true;
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
@@ -28,7 +28,7 @@ builder.Services.AddRazorPages();
 builder.Services.Configure<IdentityOptions>(
     options => {
         options.Password.RequireUppercase = false;
-        });
+    });
 
 var app = builder.Build();
 
@@ -64,8 +64,14 @@ app.Use(async (context, next) =>
         !context.Request.Path.StartsWithSegments("/Identity/Account/Register") &&
         !context.Request.Path.StartsWithSegments("/Identity/Account/Logout"))
     {
-        context.Response.Redirect("/Identity/Account/Login");
-        return;
+        //context.Response.Redirect("/Identity/Account/Login");
+        //return;
+        // Check if the request is for an API endpoint
+        if (!context.Request.Path.StartsWithSegments("/HR/TransferEmployee_API"))
+        {
+            context.Response.Redirect("/Identity/Account/Login");
+            return;
+        }
     }
     await next();
 });

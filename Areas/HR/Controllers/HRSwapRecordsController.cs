@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceHub.Data;
 using System.Reflection.PortableExecutable;
@@ -6,6 +7,7 @@ using System.Reflection.PortableExecutable;
 namespace ServiceHub.Areas.HR.Controllers
 {
     [Area("HR")]
+    [Authorize]
     public class HRSwapRecordsController : Controller
     {
         private readonly ServiceHubContext _dbcontext;
@@ -19,7 +21,7 @@ namespace ServiceHub.Areas.HR.Controllers
         }
         public async Task<IActionResult> GetMachineIPs()
         {
-            var machineIPs = await _dbcontext.AttendenceMachines
+            var machineIPs = await _dbcontext.AttendenceMachines.Where(m=>m.IsActive==true)
                 .Select(m => m.IpAddress)
                 .Distinct()
                 .ToListAsync();

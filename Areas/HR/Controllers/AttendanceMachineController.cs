@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceHub.Areas.HR.Models;
 using ServiceHub.Data;
@@ -6,6 +7,7 @@ using ServiceHub.Data;
 namespace ServiceHub.Areas.HR.Controllers
 {
     [Area("HR")]
+    [Authorize]
     public class AttendanceMachineController : Controller
     {
         private readonly ServiceHubContext _dbcontext;
