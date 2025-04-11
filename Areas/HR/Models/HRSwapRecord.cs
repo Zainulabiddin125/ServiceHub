@@ -9,7 +9,8 @@ namespace ServiceHub.Areas.HR.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int PK_line_id { get; set; }
         [StringLength(10)]
-        public string Emp_No { get; set; }
+        public string? Emp_No { get; set; }
+        public string? Emp_Name { get; set; }
         public DateTime? Swap_Time { get; set; }
         public bool Manual { get; set; }
         public bool? Shift_In { get; set; } = false;

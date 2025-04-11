@@ -59,6 +59,7 @@ namespace ServiceHub.Areas.HR.Controllers
             {
                 query = query.Where(m =>
                     m.Emp_No.Contains(searchValue) ||
+                    m.Emp_Name.Contains(searchValue) ||
                     (m.Swap_Time.HasValue && m.Swap_Time.Value.ToString().Contains(searchValue)) ||
                     (m.Creation_Date.HasValue && m.Creation_Date.Value.ToString().Contains(searchValue)) ||
                     m.Machine_IP.Contains(searchValue)
@@ -75,9 +76,10 @@ namespace ServiceHub.Areas.HR.Controllers
                 {
                     0 => isAscending ? query.OrderBy(m => m.PK_line_id) : query.OrderByDescending(m => m.PK_line_id),
                     1 => isAscending ? query.OrderBy(m => m.Emp_No) : query.OrderByDescending(m => m.Emp_No),
-                    2 => isAscending ? query.OrderBy(m => m.Swap_Time) : query.OrderByDescending(m => m.Swap_Time),
-                    3 => isAscending ? query.OrderBy(m => m.Creation_Date) : query.OrderByDescending(m => m.Creation_Date),
-                    4 => isAscending ? query.OrderBy(m => m.Machine_IP) : query.OrderByDescending(m => m.Machine_IP),
+                    2 => isAscending ? query.OrderBy(m => m.Emp_Name) : query.OrderByDescending(m => m.Emp_Name),
+                    3 => isAscending ? query.OrderBy(m => m.Swap_Time) : query.OrderByDescending(m => m.Swap_Time),
+                    4 => isAscending ? query.OrderBy(m => m.Creation_Date) : query.OrderByDescending(m => m.Creation_Date),
+                    5 => isAscending ? query.OrderBy(m => m.Machine_IP) : query.OrderByDescending(m => m.Machine_IP),
                     _ => query
                 };
             }
@@ -96,6 +98,7 @@ namespace ServiceHub.Areas.HR.Controllers
             {
                 id = m.PK_line_id,
                 emp_No = m.Emp_No,
+                emp_Name = m.Emp_Name,
                 swap_Time = m.Swap_Time.HasValue ? m.Swap_Time.Value.ToString("dd-MMM-yyyy hh:mm tt") : "",
                 creation_Date = m.Creation_Date.HasValue ? m.Creation_Date.Value.ToString("dd-MMM-yyyy hh:mm tt") : "",
                 machine_IP = m.Machine_IP,
