@@ -64,7 +64,6 @@ app.Use(async (context, next) =>
         !context.Request.Path.StartsWithSegments("/Identity/Account/Register") &&
         !context.Request.Path.StartsWithSegments("/Identity/Account/Logout"))
     {
-        //context.Response.Redirect("/Identity/Account/Login");
         //return;
         // Check if the request is for an API endpoint
         if (!context.Request.Path.StartsWithSegments("/HR/TransferEmployee_API"))

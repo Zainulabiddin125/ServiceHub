@@ -8,10 +8,4 @@
         public string EmpName { get; set; } 
         public string UserId { get; set; } 
     }
-
-    //public class Employee
-    //{
-    //    public string EmpNo { get; set; } // Employee ID
-    //    public string EmpName { get; set; } // Employee Name
-    //}
 }

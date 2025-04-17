@@ -1,7 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Fetch Attendance";
 }
-
 <style>
     .Cust-card-margin {
         margin: 5px !important;
@@ -10,8 +9,24 @@
     .table {
         margin-bottom: 0 !important;
     }
-</style>
 
+    .selected-items {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+    }
+
+    .selected-item {
+        display: inline-block;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        padding: 3px 8px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+    }
+</style>
 <div class="row">
     <div class="col-lg-12">
         <div class="card Cust-card-margin">
@@ -23,79 +38,160 @@
             <div class="card-body">
                 <div class="row mt-3">
                     <div class="col-md-2">
-                        <label for="machineIPs">Machine IP Address:</label>
+                        <label for="machineIPs">Source Machine IP:</label>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <select id="machineIPs" class="form-control" style="width: 100% !important;">
-                            <option value="">-- Select Machine IP --</option>
+                            <option value="">-- Select Source Machine IP --</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="row mt-3">
                     <div class="col-md-2">
                         <label for="employeeDropdown">Employees:</label>
                     </div>
-                    <div class="col-md-3">
-                        <select id="employeeDropdown" class="form-control" style="width: 100% !important;">
-                            <option value="">-- Select Employee --</option>
+                    <div class="col-md-4">
+                        <select id="employeeDropdown" class="form-control" style="width: 100% !important;" multiple>
+                            <option value="">-- Select Employee(s) --</option>
                         </select>
+                        <div id="selectedEmployees" class="selected-items" style="display: none;">
+                            <strong>Selected Employees:</strong>
+                            <div id="employeeTags"></div>
+                        </div>
                     </div>
                 </div>
-
                 <div class="row mt-3">
                     <div class="col-md-2">
-                        <label for="destinationIP">Destination Machine IP:</label>
+                        <label for="destinationIP">Destination Machine IP(s):</label>
                     </div>
-                    <div class="col-md-3">
-                        <select id="destinationIP" class="form-control" style="width: 100% !important;">
-                            <option value="">-- Select Destination IP --</option>
+                    <div class="col-md-4">
+                        <select id="destinationIP" class="form-control" style="width: 100% !important;" multiple>
+                            <option value="">-- Select Destination IP(s) --</option>
                         </select>
+                        <div id="selectedDestinations" class="selected-items" style="display: none;">
+                            <strong>Selected Destinations:</strong>
+                            <div id="destinationTags"></div>
+                        </div>
                     </div>
                 </div>
-
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <label>Options:</label>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="transferAllEmployees">
+                            <label class="form-check-label" for="transferAllEmployees">Select All Employees</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="transferAllMachines">
+                            <label class="form-check-label" for="transferAllMachines">Select All Machines</label>
+                        </div>
+                    </div>
+                </div>
                 <button id="fetchButton" class="btn btn-primary mt-3">Fetch Employees</button>
-                <button id="transferButton" class="btn btn-success mt-3" disabled>Transfer Employee</button>
+                @* <button id="selectAllEmployees" class="btn btn-secondary mt-3">Select All Employees</button> *@
+                <button id="transferButton" class="btn btn-success mt-3" disabled>Transfer Selected Employees</button>
             </div>
         </div>
     </div>
 </div>
-
 @section Scripts {
     <!-- Include Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Include Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <script>
         $(document).ready(function () {
+            // Initialize Select2 on dropdowns with multiple selection
+            $("#machineIPs").select2({
+                placeholder: "-- Select Source Machine IP --",
+                allowClear: true
+            });
+            $("#destinationIP").select2({
+                placeholder: "-- Select Destination IP(s) --",
+                allowClear: true,
+                multiple: true
+            });
+            $("#employeeDropdown").select2({
+                placeholder: "-- Select Employee(s) --",
+                allowClear: true,
+                multiple: true
+            });
 
-                // Initialize Select2 on dropdowns
-                $("#machineIPs").select2({
-                    placeholder: "-- Select Machine IP --",
-                    allowClear: true // Allow clearing the selection
-                });
-
-                $("#destinationIP").select2({
-                    placeholder: "-- Select Destination IP --",
-                    allowClear: true // Allow clearing the selection
-                });
-
-                $("#employeeDropdown").select2({
-                    placeholder: "-- Select Employee --",
-                    allowClear: true // Allow clearing the selection
-                });
-
-            // Load machine IPs into the dropdown
-                $.get("/HR/TransferEmployee_API/GetMachineIPs", function (data) {
+            // Load machine IPs into the dropdowns
+            $.get("/HR/TransferEmployee_API/GetMachineIPs", function (data) {
                 data.forEach(function (ip) {
                     $("#machineIPs").append(`<option value="${ip}">${ip}</option>`);
                     $("#destinationIP").append(`<option value="${ip}">${ip}</option>`);
                 });
             });
 
-          // Fetch employees when a machine IP is selected
-          $("#fetchButton").click(function () {
+            // Update selected items display when selections change
+            $("#employeeDropdown").on("change", function () {
+                updateSelectedItemsDisplay();
+                validateTransferButton();
+            });
+            $("#machineIPs").on("change", function () {
+                var selectedSourceIP = $(this).val();
+                $("#destinationIP option").each(function () {
+                    if ($(this).val() === selectedSourceIP) {
+                        $(this).prop("disabled", true);
+                        $(this).prop("selected", false); // Also deselect if already selected
+                    } else {
+                        $(this).prop("disabled", false);
+                    }
+                });
+                // Refresh the Select2 UI
+                $("#destinationIP").trigger("change.select2");
+            });
+
+            $("#destinationIP").on("change", function () {
+                updateSelectedItemsDisplay();
+                validateTransferButton();
+            });
+
+            function updateSelectedItemsDisplay() {
+                // Update employees display
+                var selectedEmployees = $("#employeeDropdown").select2("data");
+                var employeeTags = $("#employeeTags");
+                employeeTags.empty();
+                if (selectedEmployees.length > 0) {
+                    $("#selectedEmployees").show();
+                    selectedEmployees.forEach(function (item) {
+                        if (item.id) { // Skip the placeholder
+                            employeeTags.append(`<span class="selected-item">${item.text}</span>`);
+                        }
+                    });
+                } else {
+                    $("#selectedEmployees").hide();
+                }
+                // Update destinations display
+                var selectedDestinations = $("#destinationIP").select2("data");
+                var destinationTags = $("#destinationTags");
+                destinationTags.empty();
+                if (selectedDestinations.length > 0) {
+                    $("#selectedDestinations").show();
+                    selectedDestinations.forEach(function (item) {
+                        if (item.id) { // Skip the placeholder
+                            destinationTags.append(`<span class="selected-item">${item.text}</span>`);
+                        }
+                    });
+                } else {
+                    $("#selectedDestinations").hide();
+                }
+            }
+
+            function validateTransferButton() {
+                var hasEmployees = $("#employeeDropdown").val() && $("#employeeDropdown").val().length > 0;
+                var hasDestinations = $("#destinationIP").val() && $("#destinationIP").val().length > 0;
+                var sourceIP = $("#machineIPs").val();
+                $("#transferButton").prop("disabled", !(hasEmployees && hasDestinations && sourceIP));
+            }
+
+
+            // Fetch employees when a machine IP is selected        
+            $("#fetchButton").click(function () {
             var selectedIP = $("#machineIPs").val();
             if (!selectedIP) {
                 alert("Please select a machine IP.");
@@ -135,68 +231,185 @@
                 }
             });
         });
-            // Enable the transfer button when an employee is selected
-            $("#employeeDropdown").change(function () {
-                var selectedEmployee = $("#employeeDropdown").val();
-                if (selectedEmployee) {
-                    $("#transferButton").prop("disabled", false);
+            // Handle transfer button click
+            $("#transferButton").click(function () {
+                var sourceIP = $("#machineIPs").val();
+                var destinationIPs = $("#destinationIP").val();
+                var employeeValues = $("#employeeDropdown").val();
+                // Check if "Transfer All Employees" is selected
+                var transferAllEmployees = $("#transferAllEmployees").is(":checked");
+                var transferAllMachines = $("#transferAllMachines").is(":checked");
+                if (!sourceIP) {
+                    alert("Please select a source IP.");
+                    return;
+                }
+                if (!transferAllMachines && (!destinationIPs || destinationIPs.length === 0)) {
+                    alert("Please select at least one destination IP or check 'Transfer To All Machines'.");
+                    return;
+                }
+                if (!transferAllEmployees && (!employeeValues || employeeValues.length === 0)) {
+                    alert("Please select at least one employee or check 'Transfer All Employees'.");
+                    return;
+                }
+                // Prepare employee data
+                var employees = [];
+                if (transferAllEmployees) {
+                    // Fetch all employees from the source machine
+                    $.ajax({
+                        url: "/HR/TransferEmployee_API/GetEmployees",
+                        type: "POST",
+                        contentType: "application/json",
+                        async: false,
+                        data: JSON.stringify([sourceIP]),
+                        success: function (response) {
+                            if (!Array.isArray(response) || response.length === 0) {
+                                alert("No employees found on the source machine.");
+                                return;
+                            }
+                            employees = response.map(emp => ({
+                                EmpNo: emp.EmpNo,
+                                EmpName: emp.EmpName
+                            }));
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Failed to fetch employees: " + error);
+                            return;
+                        }
+                    });
                 } else {
-                    $("#transferButton").prop("disabled", true);
+                    // Use selected employees
+                    employeeValues.forEach(function (value) {
+                        var parts = value.split('|');
+                        if (parts.length === 2) {
+                            employees.push({
+                                EmpNo: parts[0],
+                                EmpName: parts[1]
+                            });
+                        }
+                    });
+                }
+                // Prepare destination IPs
+                if (transferAllMachines) {
+                    // Fetch all active machine IPs
+                    $.ajax({
+                        url: "/HR/TransferEmployee_API/GetMachineIPs",
+                        type: "GET",
+                        async: false,
+                        success: function (response) {
+                            destinationIPs = response.filter(ip => ip !== sourceIP); // Exclude source IP
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Failed to fetch machine IPs: " + error);
+                            return;
+                        }
+                    });
+                }
+                if (!destinationIPs || destinationIPs.length === 0) {
+                    alert("No valid destination machines found.");
+                    return;
+                }
+                // Prepare the transfer request payload
+                var transferRequests = {
+                    SourceIP: sourceIP,
+                    DestinationIPs: destinationIPs,
+                    Employees: employees,
+                    TransferAllEmployees: transferAllEmployees,
+                    TransferAllMachines: transferAllMachines
+                };
+                // Show confirmation dialog
+                if (confirm(`Are you sure you want to transfer ${employees.length} employee(s) to ${destinationIPs.length} machine(s)?`)) {
+                    // Send the transfer request to the backend
+                    $.ajax({
+                        url: "/HR/TransferEmployee_API/TransferMultipleEmployees",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(transferRequests),
+                        success: function (response) {
+                            debugger
+                         try {
+                             debugger
+                             // Check if the response is a string
+                             if (typeof response === "string") {
+                                 response = JSON.parse(response);
+                             }
+                             debugger
+                             // Use optional chaining (for safety) and default fallback
+                             var successCount = response?.SuccessCount ?? 0;
+                             var failCount = response?.FailCount ?? 0;
+                             var message = response?.Message ?? "";
+
+                           // alert(`Transfer completed.\nSuccess: ${successCount}\nFailed: ${failCount}\n${message}`);
+                           alert(`Transfer completed.\nSuccess: ${successCount}\nFailed: ${failCount}`);
+                        } catch (e) {
+                            alert("Failed to parse response: " + e.message);
+                        }
+                        location.reload();
+                        },
+                        error: function (xhr, status, error) {
+                            alert("Failed to transfer employees: " + xhr.responseText);
+                            location.reload();
+                        }
+                    });
                 }
             });
 
-       // Handle transfer button click
-         $("#transferButton").click(function () {
-            var sourceIP = $("#machineIPs").val();
-            var destinationIP = $("#destinationIP").val();
-            var EmpNo = $("#employeeDropdown").val();
-            var selectedEmpName = $("#employeeDropdown option:selected").text();
-            var EmpName = selectedEmpName.split(" - ")[1];
-
-            // Validate inputs
-            if (!sourceIP || !destinationIP || !EmpNo || !EmpName) {
-                alert("Please select both Source and Destination IPs, and an employee.");
-                return;
-            }
-           // Ensure source and destination IPs are different
-            if (sourceIP === destinationIP) {
-                alert("Source IP and Destination IP cannot be the same. Please select different IPs.");
-                return;
-            }
-
-            // Prepare the transfer request payload
-            var transferRequest = {
-                SourceIP: sourceIP,
-                DestinationIP: destinationIP,
-                EmpNo: EmpNo,
-                EmpName: EmpName,
-            };
-
-            // Send the transfer request to the backend
-            $.ajax({
-                url: "/HR/TransferEmployee_API/TransferEmployee",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(transferRequest),
-                success: function (response) {
-                    // Check if the response contains an error
-                    if (response.message.includes("[ERROR]")) {
-                        alert(response.message); // Display the error message
-                    } else {
-                        alert("Employee transferred successfully: " + response.message); // Success message
-                    }
-                // Refresh the page after the alert is dismissed
-                location.reload();
-                },
-                error: function (xhr, status, error) {
-                    // Handle transfer failure
-                alert("Failed to transfer employee: " + xhr.responseText);
-                // console.error("Error details:", xhr, status, error);
-                // Refresh the page after the alert is dismissed
-                location.reload();
+            // Handle "Transfer All Employees" checkbox
+            $("#transferAllEmployees").change(function () {
+                if ($(this).is(":checked")) {
+                    // Select all employees in the dropdown
+                    $("#employeeDropdown > option").prop("selected", "selected");
+                    $("#employeeDropdown").trigger("change");
+                    // Disable the employee dropdown since "Transfer All Employees" is checked
+                    $("#employeeDropdown").prop("disabled", true);
+                } else {
+                    // Deselect all employees in the dropdown
+                    $("#employeeDropdown > option").prop("selected", false);
+                    $("#employeeDropdown").trigger("change");
+                    // Enable the employee dropdown since "Transfer All Employees" is unchecked
+                    $("#employeeDropdown").prop("disabled", false);
                 }
+                // Update the UI to reflect the selected items
+                updateSelectedItemsDisplay();
+                validateTransferButton();
             });
+
+            // Handle "Transfer All Machines" checkbox
+            $("#transferAllMachines").change(function () {
+                var sourceIP = $("#machineIPs").val(); // Get selected source IP
+                if ($(this).is(":checked")) {
+                     // Loop through each option and select only if it doesn't match the source IP
+                         $("#destinationIP > option").each(function () {
+                             if ($(this).val() !== sourceIP && $(this).val() !== "") {
+                                 $(this).prop("selected", true);
+                             } else {
+                                 $(this).prop("selected", false);
+                             }
+                         });
+                } else {
+                    // Deselect all machines in the dropdown
+                    $("#destinationIP > option").prop("selected", false);
+                    $("#destinationIP").trigger("change");
+                    // Enable the destination dropdown since "Transfer All Machines" is unchecked
+                    $("#destinationIP").prop("disabled", false);
+                }
+                // Update the UI to reflect the selected items
+                updateSelectedItemsDisplay();
+                validateTransferButton();
+            });
+
+            // Handle "Select All Employees" button
+            // $("#selectAllEmployees").click(function () {
+            //     // Select all options in the employee dropdown
+            //     $("#employeeDropdown > option").prop("selected", "selected");
+            //     $("#employeeDropdown").trigger("change");
+            //     // Check the "Transfer All Employees" checkbox
+            //     $("#transferAllEmployees").prop("checked", true);
+            //     // Disable the employee dropdown since "Transfer All Employees" is checked
+            //     $("#employeeDropdown").prop("disabled", true);
+            //     // Update the UI to reflect the selected items
+            //     updateSelectedItemsDisplay();
+            //     validateTransferButton();
+            // });
         });
-    });
     </script>
 }

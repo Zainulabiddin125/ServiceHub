@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace ServiceHub.Areas.HR.Controllers
 {
+
     [Area("HR")]
     [Authorize]
     public class TransferEmployee_APIController : Controller
@@ -25,11 +26,48 @@ namespace ServiceHub.Areas.HR.Controllers
         // Endpoint to get machine IPs for the dropdown
         public async Task<IActionResult> GetMachineIPs()
         {
-            var machineIPs = await _dbcontext.AttendenceMachines.Where(m => m.IsActive == true)
-                .Select(m => m.IpAddress)
-                .Distinct()
-                .ToListAsync();
+            var machineIPs = await _dbcontext.AttendenceMachines.Where(m => m.IsActive == true).Select(m => m.IpAddress).Distinct().ToListAsync();
             return Json(machineIPs);
+        }
+
+        // Endpoint to transfer employees
+
+        [HttpPost]
+        public async Task<IActionResult> TransferMultipleEmployees([FromBody] MultipleTransferRequest transferRequest)
+        {
+            try
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("User is not authenticated.");
+                }
+                // Call the service
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromMinutes(5);
+                    var response = await client.PostAsJsonAsync("http://localhost:5000/api/transfer/", new
+                    {
+                        transferRequest.SourceIP,
+                        transferRequest.DestinationIPs,
+                        transferRequest.Employees,
+                        transferRequest.TransferAllEmployees,
+                        transferRequest.TransferAllMachines,
+                        UserId = userId
+                    });
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        //return Ok(JsonConvert.DeserializeObject<dynamic>(responseContent));
+                        return Content(responseContent, "application/json");
+                    }
+                    return StatusCode((int)response.StatusCode, responseContent);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         // Endpoint to fetch employees for specific IPs
@@ -80,7 +118,6 @@ namespace ServiceHub.Areas.HR.Controllers
                             }
                             return Ok(employees);
                         }
-
                         return BadRequest("Invalid response format: 'employees' node missing or incorrect.");
                     }
                     else
@@ -95,63 +132,22 @@ namespace ServiceHub.Areas.HR.Controllers
                     return StatusCode(500, $"Internal server error: {ex.Message}");
                 }
             }
-        }
-        // Endpoint to transfer an employee
+        }       
 
-        [HttpPost]
-        public async Task<IActionResult> TransferEmployee([FromBody] TransferEmployeeRequest transferRequest)
+        // Model for multiple transfer request
+        public class MultipleTransferRequest
         {
-            try
-            {
-                // Retrieve the current logged-in user's ID using ASP.NET Core Identity
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            public string SourceIP { get; set; }
+            public List<string> DestinationIPs { get; set; }
+            public List<EmployeeTransfer> Employees { get; set; }
+            public bool TransferAllEmployees { get; set; }
+            public bool TransferAllMachines { get; set; }
+        }
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized("User is not authenticated.");
-                }
-
-                // Validate required fields
-                if (string.IsNullOrEmpty(transferRequest.SourceIP) || string.IsNullOrEmpty(transferRequest.DestinationIP))
-                {
-                    return BadRequest("SourceIP and DestinationIP are required.");
-                }
-
-                if (string.IsNullOrEmpty(transferRequest.EmpNo) || string.IsNullOrEmpty(transferRequest.EmpName))
-                {
-                    return BadRequest("Employee data is invalid or missing.");
-                }
-                // Add the UserId to the transferRequest object
-                transferRequest.UserId = userId;
-                //Console.WriteLine($"Transferring employee {transferRequest.EmpNo} - {transferRequest.EmpName} from {transferRequest.SourceIP} to {transferRequest.DestinationIP}");
-
-                using (var client = new HttpClient())
-                {
-                    client.Timeout = TimeSpan.FromMinutes(5);
-
-                    // Forward the request to the external API
-                    var response = await client.PostAsJsonAsync("http://localhost:5000/api/transfer/", transferRequest);
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    //Console.WriteLine($"Response from Windows Service: {responseContent}");
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                        return Ok(result);
-                    }
-                    else
-                    {
-                        //Console.WriteLine($"Error from Windows Service: {responseContent}");
-                        return StatusCode((int)response.StatusCode, $"Failed to transfer employee. Error: {responseContent}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine($"Exception: {ex.Message}");
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }        
+        public class EmployeeTransfer
+        {
+            public string EmpNo { get; set; }
+            public string EmpName { get; set; }
+        }
     }
 }

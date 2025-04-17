@@ -21,11 +21,7 @@ namespace ServiceHub.Areas.HR.Controllers
         }
         public async Task<IActionResult> GetMachineIPs()
         {
-            var machineIPs = await _dbcontext.AttendenceMachines.Where(m=>m.IsActive==true)
-                .Select(m => m.IpAddress)
-                .Distinct()
-                .ToListAsync();
-
+            var machineIPs = await _dbcontext.AttendenceMachines.Where(m=>m.IsActive==true).Select(m => m.IpAddress).Distinct().ToListAsync();
             return Json(machineIPs);
         }
         [HttpPost]
@@ -44,9 +40,7 @@ namespace ServiceHub.Areas.HR.Controllers
             int skip = start != null ? Convert.ToInt32(start) : 0;
 
          
-            var query = _dbcontext.HR_Swap_Record
-                .OrderByDescending(m => m.PK_line_id)
-                .AsQueryable();
+            var query = _dbcontext.HR_Swap_Record.OrderByDescending(m => m.PK_line_id).AsQueryable();
 
             // Apply IP filter if provided
             if (!string.IsNullOrEmpty(ipAddress))
@@ -57,13 +51,7 @@ namespace ServiceHub.Areas.HR.Controllers
             // Apply search filter
             if (!string.IsNullOrEmpty(searchValue))
             {
-                query = query.Where(m =>
-                    m.Emp_No.Contains(searchValue) ||
-                    m.Emp_Name.Contains(searchValue) ||
-                    (m.Swap_Time.HasValue && m.Swap_Time.Value.ToString().Contains(searchValue)) ||
-                    (m.Creation_Date.HasValue && m.Creation_Date.Value.ToString().Contains(searchValue)) ||
-                    m.Machine_IP.Contains(searchValue)
-                );
+                query = query.Where(m =>m.Emp_No.Contains(searchValue) || m.Emp_Name.Contains(searchValue) || (m.Swap_Time.HasValue && m.Swap_Time.Value.ToString().Contains(searchValue)) ||(m.Creation_Date.HasValue && m.Creation_Date.Value.ToString().Contains(searchValue)) ||m.Machine_IP.Contains(searchValue));
             }
 
             // Sorting
@@ -71,7 +59,6 @@ namespace ServiceHub.Areas.HR.Controllers
             {
                 int columnIndex = int.Parse(sortColumnIndex);
                 bool isAscending = sortDirection == "asc";
-
                 query = columnIndex switch
                 {
                     0 => isAscending ? query.OrderBy(m => m.PK_line_id) : query.OrderByDescending(m => m.PK_line_id),
@@ -83,15 +70,10 @@ namespace ServiceHub.Areas.HR.Controllers
                     _ => query
                 };
             }
-
             // Total records count
             int totalRecords = await query.CountAsync();
-
             // Apply pagination
-            var queryData = await query
-                                .Skip(skip)
-                                .Take(pageSize)
-                                .ToListAsync();
+            var queryData = await query.Skip(skip).Take(pageSize).ToListAsync();
 
             // Transform data
             var data = queryData.Select(m => new
