@@ -42,11 +42,18 @@ namespace ServiceHub.Areas.HR.Controllers
             // Apply search filter
             if (!string.IsNullOrEmpty(searchValue))
             {
+                var search = searchValue.ToLower();
+
                 query = query.Where(m =>
                     m.Name.Contains(searchValue) ||
                     m.IpAddress.Contains(searchValue) ||
                     m.Description.Contains(searchValue) ||
-                    m.Location.Contains(searchValue));
+                    m.Location.Contains(searchValue) ||
+                    (search == "yes" && m.IsActive) ||
+                    (search == "no" && !m.IsActive) ||
+                    (search == "all" && m.IsFetchAll) ||
+                    (search == "latest" && !m.IsFetchAll)
+                );
             }
 
             // Apply sorting
@@ -60,10 +67,21 @@ namespace ServiceHub.Areas.HR.Controllers
                     case "ipAddress":
                         query = sortDirection == "asc" ? query.OrderBy(m => m.IpAddress) : query.OrderByDescending(m => m.IpAddress);
                         break;
+                    case "port":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Port) : query.OrderByDescending(m => m.Port);
+                        break;
+                    case "description":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Description) : query.OrderByDescending(m => m.Description);
+                        break;
                     case "location":
                         query = sortDirection == "asc" ? query.OrderBy(m => m.Location) : query.OrderByDescending(m => m.Location);
                         break;
-                        // Add more cases for other columns
+                    case "isActive":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.IsActive) : query.OrderByDescending(m => m.IsActive);
+                        break;
+                    case "isFetchAll":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.IsFetchAll) : query.OrderByDescending(m => m.IsFetchAll);
+                        break;
                 }
             }
 
