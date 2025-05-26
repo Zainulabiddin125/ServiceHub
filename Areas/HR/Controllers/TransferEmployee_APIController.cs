@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using ServiceHub.Controllers;
 using ServiceHub.Data;
 using ServiceHub.Models;
-using Newtonsoft.Json.Linq;
 
 namespace ServiceHub.Areas.HR.Controllers
 {
@@ -14,20 +15,36 @@ namespace ServiceHub.Areas.HR.Controllers
     public class TransferEmployee_APIController : Controller
     {
         private readonly ServiceHubContext _dbcontext;
+        private readonly TimeWindowService _timeWindowService;
+        private readonly ILogger<TransferEmployee_APIController> _logger;
 
-        public TransferEmployee_APIController(ServiceHubContext dbcontext)
+        public TransferEmployee_APIController(ServiceHubContext dbcontext,TimeWindowService timeWindowService,ILogger<TransferEmployee_APIController> logger)
         {
             _dbcontext = dbcontext;
+            _timeWindowService = timeWindowService;
+            _logger = logger;
         }
+
         public IActionResult Index()
         {
+            ViewBag.IsTransferWindowOpen = _timeWindowService.IsTransferWindowOpen();
+            ViewBag.TransferWindowMessage = _timeWindowService.GetTransferWindowMessage();
+            ViewBag.NextWindowChange = _timeWindowService.GetNextWindowChange()?.TotalMilliseconds;
             return View();
         }
         // Endpoint to get machine IPs for the dropdown
         public async Task<IActionResult> GetMachineIPs()
         {
-            var machineIPs = await _dbcontext.AttendenceMachines.Where(m => m.IsActive == true).Select(m => m.IpAddress).Distinct().ToListAsync();
+            try
+            {
+                var machineIPs = await _dbcontext.AttendenceMachines.Where(m => m.IsActive == true).Select(m => m.IpAddress).Distinct().ToListAsync();
             return Json(machineIPs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting machine IPs");
+                return StatusCode(500, "Error getting machine IPs");
+            }
         }
 
         // Endpoint to transfer employees
@@ -37,6 +54,16 @@ namespace ServiceHub.Areas.HR.Controllers
         {
             try
             {
+                if (!_timeWindowService.IsTransferWindowOpen())
+                {
+                    _logger.LogWarning("Transfer attempted outside allowed window");
+                    return StatusCode(403, new
+                    {
+                        SuccessCount = 0,
+                        FailCount = 0,
+                        Message = _timeWindowService.GetTransferWindowMessage()
+                    });
+                }
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -58,7 +85,6 @@ namespace ServiceHub.Areas.HR.Controllers
                     var responseContent = await response.Content.ReadAsStringAsync();
                     if (response.IsSuccessStatusCode)
                     {
-                        //return Ok(JsonConvert.DeserializeObject<dynamic>(responseContent));
                         return Content(responseContent, "application/json");
                     }
                     return StatusCode((int)response.StatusCode, responseContent);
@@ -66,14 +92,81 @@ namespace ServiceHub.Areas.HR.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error during employee transfer");
+                return StatusCode(500, new
+                {
+                    SuccessCount = 0,
+                    FailCount = 0,
+                    Message = $"Internal server error: {ex.Message}"
+                });
             }
         }
+        [HttpGet]
+        public IActionResult CheckTransferWindow()
+        {
+            return Json(new
+            {
+                isOpen = _timeWindowService.IsTransferWindowOpen(),
+                message = _timeWindowService.GetTransferWindowMessage(),
+                nextCheckInMs = _timeWindowService.GetNextWindowChange()?.TotalMilliseconds ?? 30000
+            });
+        }
+        [HttpGet]
+        public IActionResult IsTransferWindowOpen()
+        {
+            return Json(_timeWindowService.IsTransferWindowOpen());
+        }
+        [HttpGet]
+        public IActionResult GetTransferWindows()
+        {
+            try
+            {
+                var windows = new List<object>();
+                var now = DateTime.Now;
+
+                // Get all transfer times and run times
+                var transferTimes = _timeWindowService.GetTransferTimes();
+                var runTimes = _timeWindowService.GetRunTimes();
+
+                foreach (var transferTime in transferTimes)
+                {
+                    // Find the next runtime after this transfer time
+                    var nextRuntime = runTimes.FirstOrDefault(r => r > transferTime);
+                    var windowEnd = nextRuntime != default ? nextRuntime
+                        : runTimes.First().Add(TimeSpan.FromDays(1));
+
+                    windows.Add(new
+                    {
+                        Start = DateTime.Today.Add(transferTime).ToString("hh:mm tt"),
+                        End = DateTime.Today.Add(windowEnd).ToString("hh:mm tt"),
+                        IsCurrent = now.TimeOfDay >= transferTime && now.TimeOfDay < windowEnd
+                    });
+                }
+
+                return Json(windows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transfer windows");
+                return StatusCode(500, "Error getting transfer schedule");
+            }
+        }        
 
         // Endpoint to fetch employees for specific IPs
         [HttpPost]
         public async Task<IActionResult> GetEmployees([FromBody] List<string> machineIPs)
         {
+            try
+            {
+                if (!_timeWindowService.IsTransferWindowOpen())
+            {
+                return StatusCode(403, new
+                {
+                    SuccessCount = 0,
+                    FailCount = 0,
+                    Message = _timeWindowService.GetTransferWindowMessage()
+                });
+            }
             using (var client = new HttpClient())
             {
                 // Increase timeout to 5 minutes
@@ -131,6 +224,12 @@ namespace ServiceHub.Areas.HR.Controllers
                     //Console.WriteLine($"Exception: {ex.Message}");
                     return StatusCode(500, $"Internal server error: {ex.Message}");
                 }
+            }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching employees");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }       
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ServiceHub.Controllers;
 using ServiceHub.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,8 @@ var connectionString = builder.Configuration.GetConnectionString("ServiceHubCont
 builder.Services.AddDbContext<ServiceHubContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddDefaultIdentity<ApplicationUser>().AddEntityFrameworkStores<ServiceHubContext>();
-
+builder.Services.AddSingleton<TimeWindowService>();
+builder.Services.AddHttpClient();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = $"/Identity/Account/Login"; 
