@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceHub.Data;
@@ -113,6 +114,78 @@ namespace ServiceHub.Areas.HR.Controllers
                 data = data
             });
         }
-        
+        [HttpGet]
+        public async Task<IActionResult> ExportAttendanceRecords(string ipAddress = null, string startDate = null, string endDate = null, CancellationToken cancellationToken = default)
+        {
+            var query = _dbcontext.HR_Swap_Record.AsQueryable();
+
+            if (!string.IsNullOrEmpty(ipAddress))
+                query = query.Where(m => m.Machine_IP == ipAddress);
+
+            if (DateTime.TryParse(startDate, out var startDt))
+                query = query.Where(m => m.Swap_Time >= startDt);
+
+            if (DateTime.TryParse(endDate, out var endDt))
+                query = query.Where(m => m.Swap_Time <= endDt);
+
+            // Only select necessary data to reduce memory usage
+            var records = await query.Select(m => new
+            {
+                m.PK_line_id,
+                m.Emp_No,
+                m.Emp_Name,
+                Swap_Time = m.Swap_Time.HasValue ? m.Swap_Time.Value.ToString("dd-MMM-yyyy hh:mm tt") : "",
+                Shift_In = Convert.ToBoolean(m.Shift_In) ? "Yes" : "No",
+                Shift_Out = Convert.ToBoolean(m.Shift_Out) ? "Yes" : "No",
+                Creation_Date = m.Creation_Date.HasValue ? m.Creation_Date.Value.ToString("dd-MMM-yyyy hh:mm tt") : "",
+                m.Machine_IP,
+                m.Machine_Port,
+                m.MachineId
+            }).ToListAsync(cancellationToken);
+
+            // Optional: Limit max number of records for safety
+            const int MAX_EXPORT_RECORDS = 100_000;
+            if (records.Count > MAX_EXPORT_RECORDS)
+            {
+                return BadRequest($"Too many records ({records.Count}). Please refine your filters to export fewer than {MAX_EXPORT_RECORDS} records.");
+            }
+
+            // Generate Excel
+            using var workbook = new XLWorkbook();
+            IXLWorksheet worksheet = workbook.Worksheets.Add("Attendance Swap Records");
+
+            // Headers
+            worksheet.Cell(1, 1).Value = "ID";
+            worksheet.Cell(1, 2).Value = "Emp #";
+            worksheet.Cell(1, 3).Value = "Emp Name";
+            worksheet.Cell(1, 4).Value = "Swap Time";
+            worksheet.Cell(1, 5).Value = "Shift In";
+            worksheet.Cell(1, 6).Value = "Shift Out";
+            worksheet.Cell(1, 7).Value = "Creation Date";
+            worksheet.Cell(1, 8).Value = "Machine IP";
+            worksheet.Cell(1, 9).Value = "Machine Port";
+            worksheet.Cell(1, 10).Value = "Machine ID";
+
+            int row = 2;
+            foreach (var record in records)
+            {
+                worksheet.Cell(row, 1).Value = record.PK_line_id;
+                worksheet.Cell(row, 2).Value = record.Emp_No;
+                worksheet.Cell(row, 3).Value = record.Emp_Name;
+                worksheet.Cell(row, 4).Value = record.Swap_Time;
+                worksheet.Cell(row, 5).Value = record.Shift_In;
+                worksheet.Cell(row, 6).Value = record.Shift_Out;
+                worksheet.Cell(row, 7).Value = record.Creation_Date;
+                worksheet.Cell(row, 8).Value = record.Machine_IP;
+                worksheet.Cell(row, 9).Value = record.Machine_Port;
+                worksheet.Cell(row, 10).Value = record.MachineId;
+                row++;
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AttendanceSwapRecords.xlsx");
+        }
     }
 }

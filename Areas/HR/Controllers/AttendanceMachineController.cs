@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceHub.Areas.HR.Models;
@@ -199,6 +200,114 @@ namespace ServiceHub.Areas.HR.Controllers
         private bool AttendanceMachineExists(int id)
         {
             return _dbcontext.AttendenceMachines.Any(e => e.Id == id);
-        }      
+        }
+        [HttpGet]
+        public async Task<IActionResult> ExportAttendanceMachines(string search = null, string sortColumn = null, string sortDirection = null)
+        {
+            var query = _dbcontext.AttendenceMachines.AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(search))
+            {
+                var searchValue = search.ToLower();
+                query = query.Where(m =>
+                    m.Name.Contains(searchValue) ||
+                    m.IpAddress.Contains(searchValue) ||
+                    m.Description.Contains(searchValue) ||
+                    m.Location.Contains(searchValue) ||
+                    (search == "yes" && m.IsActive) ||
+                    (search == "no" && !m.IsActive) ||
+                    (search == "all" && m.IsFetchAll) ||
+                    (search == "latest" && !m.IsFetchAll)
+                );
+            }
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                switch (sortColumn)
+                {
+                    case "name":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Name) : query.OrderByDescending(m => m.Name);
+                        break;
+                    case "ipAddress":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.IpAddress) : query.OrderByDescending(m => m.IpAddress);
+                        break;
+                    case "port":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Port) : query.OrderByDescending(m => m.Port);
+                        break;
+                    case "description":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Description) : query.OrderByDescending(m => m.Description);
+                        break;
+                    case "location":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.Location) : query.OrderByDescending(m => m.Location);
+                        break;
+                    case "isActive":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.IsActive) : query.OrderByDescending(m => m.IsActive);
+                        break;
+                    case "isFetchAll":
+                        query = sortDirection == "asc" ? query.OrderBy(m => m.IsFetchAll) : query.OrderByDescending(m => m.IsFetchAll);
+                        break;
+                }
+            }
+
+            // Fetch all filtered records
+            var records = await query.Select(m => new
+            {
+                Id = m.Id,
+                Name = m.Name,
+                IpAddress = m.IpAddress,
+                Port = m.Port,
+                Description = m.Description,
+                Location = m.Location,
+                IsActive = m.IsActive ? "Yes" : "No",
+                IsFetchAll = m.IsFetchAll ? "All" : "Latest"
+            }).ToListAsync();
+
+
+            //const int MAX_RECORDS = 100_000;
+            //if (records.Count > MAX_RECORDS)
+            //{
+            //    return BadRequest($"Too many records ({records.Count}). Please refine your filters.");
+            //}
+
+            // Generate Excel file
+            using (var workbook = new XLWorkbook())
+            {
+                IXLWorksheet worksheet = workbook.Worksheets.Add("Attendance Machines");
+
+                // Headers
+                worksheet.Cell(1, 1).Value = "ID";
+                worksheet.Cell(1, 2).Value = "Name";
+                worksheet.Cell(1, 3).Value = "IP Address";
+                worksheet.Cell(1, 4).Value = "Port";
+                worksheet.Cell(1, 5).Value = "Description";
+                worksheet.Cell(1, 6).Value = "Location";
+                worksheet.Cell(1, 7).Value = "Active";
+                worksheet.Cell(1, 8).Value = "Fetch Records";
+
+                int row = 2;
+                foreach (var record in records)
+                {
+                    worksheet.Cell(row, 1).Value = record.Id;
+                    worksheet.Cell(row, 2).Value = record.Name;
+                    worksheet.Cell(row, 3).Value = record.IpAddress;
+                    worksheet.Cell(row, 4).Value = record.Port;
+                    worksheet.Cell(row, 5).Value = record.Description;
+                    worksheet.Cell(row, 6).Value = record.Location;
+                    worksheet.Cell(row, 7).Value = record.IsActive;
+                    worksheet.Cell(row, 8).Value = record.IsFetchAll;
+
+                    row++;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AttendanceMachinesRecord.xlsx");
+                }
+            }
+        }
     }
 }

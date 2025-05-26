@@ -133,14 +133,17 @@
                         className: 'btn btn-dt-primry btn-sm'
                     },
                     {
-                        extend: 'csv',
-                        text: '<i class="fas fa-file-csv"></i> CSV',
-                        className: 'btn btn-dt-info btn-sm'
-                    },
-                    {
-                        extend: 'excel',
-                        text: '<i class="fas fa-file-excel"></i> Excel',
-                        className: 'btn btn-dt-success btn-sm'
+                        text: '<i class="fas fa-file-excel"></i> Export All (Excel)',
+                        className: 'btn btn-dt-success btn-sm',
+                        action: function (e, dt, button, config) {
+                            var searchValue = $('#connectionLogsTable_filter input').val();
+                            var sortColumn = dt.order()[0][0];
+                            var sortDirection = dt.order()[0][1];
+                            window.location.href = '/HR/AttendanceMachineConnectionLogs/ExportConnectionLogs' +
+                                '?search=' + encodeURIComponent(searchValue || '') +
+                                '&sortColumn=' + encodeURIComponent(sortColumn || '') +
+                                '&sortDirection=' + encodeURIComponent(sortDirection || '');
+                        }
                     },
                     {
                         extend: 'pdf',
