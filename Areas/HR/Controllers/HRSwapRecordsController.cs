@@ -45,7 +45,7 @@ namespace ServiceHub.Areas.HR.Controllers
             int pageSize = length != null ? Convert.ToInt32(length) : 10;
             int skip = start != null ? Convert.ToInt32(start) : 0;
 
-            var query = _dbcontext.HR_Swap_Record.AsQueryable();
+            var query = _dbcontext.HR_Swap_Record.AsNoTracking().AsQueryable();
 
             // Apply filters
             if (!string.IsNullOrEmpty(ipAddress))

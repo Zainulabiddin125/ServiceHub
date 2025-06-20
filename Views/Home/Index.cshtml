@@ -97,7 +97,8 @@
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+@* <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> *@
+<script src="~/js/apexcharts.js"></script>
 @section Scripts {
     <script>
         var chartData = @Html.Raw(Json.Serialize(Model.ChartData ?? new List<int>()));
