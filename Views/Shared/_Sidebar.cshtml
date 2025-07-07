@@ -157,7 +157,48 @@
                         </li>
                     </ul>
                 </li>
-
+                <!-- Change Password -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="ChangeAdminPassword">
+                        <i class="nav-icon bi bi-shield-lock"></i> 
+                        <p>
+                            Change Admin Password
+                            <i class="nav-arrow bi bi-chevron-down"></i> 
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-area="HR" asp-controller="PasswordChange" asp-action="Index" class="nav-link" id="view-swaps">
+                                <i class="nav-icon bi bi-key"></i>
+                                <p>Change</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- Decrypt  Password -->
+                @{
+                    var userName = User.Identity?.Name?.ToLower();
+                }
+                @if (userName == "test@gmail.com")
+                {
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="ChangeAdminPassword">
+                            <i class="nav-icon bi bi-shield-lock-fill"></i>
+                            <p>
+                                Decrypt Password
+                                <i class="nav-arrow bi bi-chevron-down ms-2"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a asp-area="HR" asp-controller="AdminDecrypt" asp-action="Index" class="nav-link" id="view-swaps">
+                                    <i class="nav-icon bi bi-unlock"></i>
+                                    <p>Decrypt</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
 
             </ul>
             <!--end::Sidebar Menu-->

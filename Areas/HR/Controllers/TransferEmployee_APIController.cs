@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -32,20 +33,28 @@ namespace ServiceHub.Areas.HR.Controllers
             ViewBag.NextWindowChange = _timeWindowService.GetNextWindowChange()?.TotalMilliseconds;
             return View();
         }
-        // Endpoint to get machine IPs for the dropdown
+        
         public async Task<IActionResult> GetMachineIPs()
         {
             try
             {
-                var machineIPs = await _dbcontext.AttendenceMachines.Where(m => m.IsActive == true).Select(m => m.IpAddress).Distinct().ToListAsync();
-            return Json(machineIPs);
+                var machineIPs = await _dbcontext.AttendenceMachines
+                    .Where(m => m.IsActive)
+                    .Select(m => new
+                    {
+                        Value = m.IpAddress,
+                        Label = m.Location + " - " + m.IpAddress
+                    })
+                    .ToListAsync();
+
+                return Json(machineIPs);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting machine IPs");
-                return StatusCode(500, "Error getting machine IPs");
+                return StatusCode(500, "Error getting machine IPs: " + ex.Message);
             }
         }
+
 
         // Endpoint to transfer employees
 

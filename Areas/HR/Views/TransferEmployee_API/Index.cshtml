@@ -201,8 +201,8 @@
             // Load machine IPs into the dropdowns
             $.get("/HR/TransferEmployee_API/GetMachineIPs", function (data) {
                 data.forEach(function (ip) {
-                    $("#machineIPs").append(`<option value="${ip}">${ip}</option>`);
-                    $("#destinationIP").append(`<option value="${ip}">${ip}</option>`);
+                    $("#machineIPs").append(`<option value="${ip.value}">${ip.label}</option>`);
+                    $("#destinationIP").append(`<option value="${ip.value}">${ip.label}</option>`);
                 });
             });
 

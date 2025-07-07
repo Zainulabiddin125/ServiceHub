@@ -14,8 +14,11 @@ public class ServiceHubContext : IdentityDbContext<ApplicationUser>
     public DbSet<AttendanceMachine> AttendenceMachines { get; set; }
     public DbSet<AttendanceMachineConnectionLog> AttendenceMachineConnectionLogs { get; set; }
     public DbSet<HRSwapRecord> HR_Swap_Record { get; set; }
+    public DbSet<PasswordChangeLog> PasswordChangeLog { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);        
+
     }
 }
