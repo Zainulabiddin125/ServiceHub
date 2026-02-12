@@ -30,9 +30,9 @@ namespace ServiceHub.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),                    
+                    FirstName = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -50,6 +50,86 @@ namespace ServiceHub.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AttendenceMachineConnectionLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MachineId = table.Column<int>(type: "int", nullable: false),
+                    Machine_IP = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Connection_StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Connection_EndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RecordsRead = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttendenceMachineConnectionLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AttendenceMachines",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Port = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsFetchAll = table.Column<bool>(type: "bit", nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeviceModel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttendenceMachines", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HR_Swap_Record",
+                columns: table => new
+                {
+                    PK_line_id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Emp_No = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    Emp_Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Swap_Time = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Manual = table.Column<bool>(type: "bit", nullable: false),
+                    Shift_In = table.Column<bool>(type: "bit", nullable: true),
+                    Shift_Out = table.Column<bool>(type: "bit", nullable: true),
+                    Creation_Date = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Machine_IP = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Machine_Port = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    MachineId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HR_Swap_Record", x => x.PK_line_id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PasswordChangeLog",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IP = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OldPassword = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    NewPassword = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PasswordChangeLog", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -215,6 +295,18 @@ namespace ServiceHub.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AttendenceMachineConnectionLogs");
+
+            migrationBuilder.DropTable(
+                name: "AttendenceMachines");
+
+            migrationBuilder.DropTable(
+                name: "HR_Swap_Record");
+
+            migrationBuilder.DropTable(
+                name: "PasswordChangeLog");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

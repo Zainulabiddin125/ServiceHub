@@ -391,7 +391,7 @@ namespace ServiceHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PasswordChangeLogs");
+                    b.ToTable("PasswordChangeLog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

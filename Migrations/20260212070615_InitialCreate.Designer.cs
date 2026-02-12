@@ -12,8 +12,8 @@ using ServiceHub.Data;
 namespace ServiceHub.Migrations
 {
     [DbContext(typeof(ServiceHubContext))]
-    [Migration("20250305100005_AddAttendanceMachine")]
-    partial class AddAttendanceMachine
+    [Migration("20260212070615_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -247,16 +247,16 @@ namespace ServiceHub.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DeviceModel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -267,20 +267,134 @@ namespace ServiceHub.Migrations
                     b.Property<DateTime?>("LastUpdated")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<int>("Port")
                         .HasColumnType("int");
 
-                    b.Property<string>("SerialNumber")
+                    b.HasKey("Id");
+
+                    b.ToTable("AttendenceMachines");
+                });
+
+            modelBuilder.Entity("ServiceHub.Areas.HR.Models.AttendanceMachineConnectionLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("Connection_EndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Connection_StartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MachineId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Machine_IP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("RecordsRead")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("AttendenceMachines");
+                    b.ToTable("AttendenceMachineConnectionLogs");
+                });
+
+            modelBuilder.Entity("ServiceHub.Areas.HR.Models.HRSwapRecord", b =>
+                {
+                    b.Property<int>("PK_line_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PK_line_id"));
+
+                    b.Property<DateTime?>("Creation_Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Emp_Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Emp_No")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int?>("MachineId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Machine_IP")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Machine_Port")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("Manual")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("Shift_In")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("Shift_Out")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("Swap_Time")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PK_line_id");
+
+                    b.ToTable("HR_Swap_Record");
+                });
+
+            modelBuilder.Entity("ServiceHub.Areas.HR.Models.PasswordChangeLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewPassword")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldPassword")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordChangeLog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
