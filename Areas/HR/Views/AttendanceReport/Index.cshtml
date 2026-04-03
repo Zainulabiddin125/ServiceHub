@@ -1,0 +1,677 @@
+﻿@model ServiceHub.Areas.HR.Models.AttendanceReportPageViewModel
+@{
+    ViewData["Title"] = "Employee Attendance Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --navy:       #1e3a5f;
+        --navy-light: #2d5a96;
+        --green:      #198754;
+        --red:        #dc3545;
+        --orange:     #fd7e14;
+        --card-bg:    #ffffff;
+        --border:     #dde3ec;
+        --text-main:  #1a2535;
+        --text-muted: #6b7a94;
+        --shadow:     0 2px 12px rgba(30,58,95,0.10);
+    }
+
+    .rpt-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px 14px;
+        box-shadow: var(--shadow);
+        flex-wrap: wrap;
+    }
+
+    .rpt-tab {
+        padding: 7px 20px;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: #f7f9fc;
+        color: var(--text-muted);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .rpt-tab:hover      { border-color: var(--navy-light); color: var(--navy); }
+    .rpt-tab.active     { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    .filter-card {
+        background: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 150px;
+    }
+
+    .fg label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--text-muted);
+    }
+
+    .fg select,
+    .fg input[type="date"],
+    .fg input[type="text"],
+    .fg input[type="number"] {
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        color: var(--text-main);
+        background: #f7f9fc;
+        outline: none;
+        transition: border-color .15s;
+        height: 34px;
+    }
+
+    .fg select:focus,
+    .fg input:focus { border-color: var(--navy-light); background: #fff; }
+
+    .table-card {
+        background: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .table-card-header {
+        background: var(--navy);
+        color: #fff;
+        padding: 13px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .table-card-header h5 { margin: 0; font-size: 15px; font-weight: 700; }
+    .table-card-body { padding: 16px; }
+
+    .btn-exp {
+        border: none; color: #fff;
+        border-radius: 6px; padding: 5px 14px;
+        font-size: 12px; cursor: pointer;
+        text-decoration: none; display: inline-block;
+    }
+
+    .btn-exp-excel { background: #198754; }
+    .btn-exp-excel:hover { background: #146c43; color: #fff; }
+    .btn-exp-pdf   { background: #dc3545; }
+    .btn-exp-pdf:hover { background: #b02a37; color: #fff; }
+
+    /* Badges */
+    .badge-late { background: #fce4e8; color: #b91c30;
+        padding: 2px 9px; border-radius: 20px;
+        font-size: 11px; font-weight: 700; }
+
+    .badge-ot { background: #cfe2ff; color: #084298;
+        padding: 2px 9px; border-radius: 20px;
+        font-size: 11px; font-weight: 700; }
+
+    .badge-ok { background: #d4f5e2; color: #0a4226;
+        padding: 2px 9px; border-radius: 20px;
+        font-size: 11px; font-weight: 700; }
+
+    .badge-absent { background: #fff3cd; color: #664d03;
+        padding: 2px 9px; border-radius: 20px;
+        font-size: 11px; font-weight: 700; }
+
+    #attTable thead th, #attTableMonthly thead th, #attTableAbsentee thead th {
+        background: #f0f4fa;
+        color: var(--navy);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .month-filter { display: none; }
+    .date-filter  { display: flex; }
+
+    @@media (max-width: 768px) {
+        .filter-row { flex-direction: column; }
+        .fg { min-width: 100%; }
+    }
+</style>
+
+<div class="container-fluid" style="padding: 20px 16px;">
+
+    <!-- Report Type Tabs -->
+    <div class="rpt-tabs">
+        <span class="rpt-tab active" data-type="Detail">
+            <i class="fas fa-list-alt"></i> Detail Report
+        </span>
+        <span class="rpt-tab" data-type="Monthly">
+            <i class="fas fa-calendar-alt"></i> Monthly Summary
+        </span>
+        <span class="rpt-tab" data-type="Absentee">
+            <i class="fas fa-user-times"></i> Absentee Report
+        </span>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <div class="filter-row">
+
+            <!-- Date range filters (Detail + Absentee) -->
+            <div class="fg date-filter" id="fgDateFrom">
+                <label for="dateFromDisplay">Date From</label>
+                <div style="position:relative; display:flex; align-items:center;">
+                    <input type="text" id="dateFromDisplay" placeholder="DD-MMM-YYYY"
+                           maxlength="11" readonly
+                           style="cursor:pointer; padding-right:32px;" />
+                    <input type="date" id="dateFrom"
+                           style="position:absolute; right:0; width:32px; opacity:0; cursor:pointer;" />
+                    <i class="fas fa-calendar-alt"
+                       style="position:absolute; right:8px; color:#6b7a94; pointer-events:none;"></i>
+                </div>
+            </div>
+
+            <div class="fg date-filter" id="fgDateTo">
+                <label for="dateToDisplay">Date To</label>
+                <div style="position:relative; display:flex; align-items:center;">
+                    <input type="text" id="dateToDisplay" placeholder="DD-MMM-YYYY"
+                           maxlength="11" readonly
+                           style="cursor:pointer; padding-right:32px;" />
+                    <input type="date" id="dateTo"
+                           style="position:absolute; right:0; width:32px; opacity:0; cursor:pointer;" />
+                    <i class="fas fa-calendar-alt"
+                       style="position:absolute; right:8px; color:#6b7a94; pointer-events:none;"></i>
+                </div>
+            </div>
+
+            <!-- Month / Year filters (Monthly) -->
+            <div class="fg month-filter" id="fgMonth">
+                <label for="fMonth">Month</label>
+                <select id="fMonth">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="fg month-filter" id="fgYear">
+                <label for="fYear">Year</label>
+                <input type="number" id="fYear" min="2018" max="2099" style="width:90px;" />
+            </div>
+
+            <div class="fg">
+                <label for="fEmployee">Employee ID</label>
+                <input type="text" id="fEmployee" placeholder="Search by ID..." />
+            </div>
+            <div class="fg">
+                 <label for="fEmpName">Employee Name</label>
+                 <input type="text" id="fEmpName" placeholder="Search by name..." />
+            </div>
+            <div class="fg">
+                <label for="fDept">Department</label>
+                <select id="fDept">
+                    <option value="">All Departments</option>
+                    @foreach (var dept in Model.Departments)
+                    {
+                        <option value="@dept">@dept</option>
+                    }
+                </select>
+            </div>
+
+            <div class="fg">
+                <label for="fLocation">Location / Branch</label>
+                <select id="fLocation">
+                    <option value="">All Locations</option>
+                    @foreach (var loc in Model.Locations)
+                    {
+                        <option value="@loc.Name">@loc.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="fg" style="flex-direction: row; align-items: flex-end; gap: 8px; min-width:auto;">
+                <button class="btn btn-primary btn-sm" id="btnApply" style="height:34px;padding:0 16px;">
+                    <i class="fas fa-filter"></i> Apply
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btnClear" style="height:34px;padding:0 14px;">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Report Table -->
+    <div class="table-card" id="panelDetail">
+        <div class="table-card-header">
+            <h5><i class="fas fa-list-alt" style="margin-right:8px;"></i>Attendance Detail Report</h5>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a id="btnExcelDetail" href="#" class="btn-exp btn-exp-excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+                <a id="btnPdfDetail" href="#" class="btn-exp btn-exp-pdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </a>
+            </div>
+        </div>
+        <div class="table-card-body">
+            <table id="attTable" class="table table-striped table-bordered table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Emp ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Working Hours</th>
+                        <th>Late Mark</th>
+                        <th>Overtime</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Monthly Summary Table -->
+    <div class="table-card" id="panelMonthly" style="display:none;">
+        <div class="table-card-header">
+            <h5><i class="fas fa-calendar-alt" style="margin-right:8px;"></i>Monthly Attendance Summary</h5>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a id="btnExcelMonthly" href="#" class="btn-exp btn-exp-excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+                <a id="btnPdfMonthly" href="#" class="btn-exp btn-exp-pdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </a>
+            </div>
+        </div>
+        <div class="table-card-body">
+            <table id="attTableMonthly" class="table table-striped table-bordered table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Emp ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Location</th>
+                        <th>Month</th>
+                        <th>Total Days</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Late Days</th>
+                        <th>Total Worked</th>
+                        <th>Overtime</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Absentee Report Table -->
+    <div class="table-card" id="panelAbsentee" style="display:none;">
+        <div class="table-card-header">
+            <h5><i class="fas fa-user-times" style="margin-right:8px;"></i>Absentee Report</h5>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a id="btnExcelAbsentee" href="#" class="btn-exp btn-exp-excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+                <a id="btnPdfAbsentee" href="#" class="btn-exp btn-exp-pdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </a>
+            </div>
+        </div>
+        <div class="table-card-body">
+            <table id="attTableAbsentee" class="table table-striped table-bordered table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Emp ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Location</th>
+                        <th>Absent Date</th>
+                        <th>Day</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+$(function () {
+
+    if (typeof $.fn.DataTable === 'undefined') {
+        console.error('DataTables not loaded.');
+        return;
+    }
+
+    // ----------------------------------------------------------------
+    //  State
+    // ----------------------------------------------------------------
+    var currentType = 'Detail';
+
+    // Seed month/year to current
+    var now = new Date();
+    $('#fMonth').val(now.getMonth() + 1);
+    $('#fYear').val(now.getFullYear());
+
+    // ----------------------------------------------------------------
+    //  Tab switching
+    // ----------------------------------------------------------------
+    $('.rpt-tab').on('click', function () {
+        $('.rpt-tab').removeClass('active');
+        $(this).addClass('active');
+        currentType = $(this).data('type');
+
+        $('#panelDetail').hide();
+        $('#panelMonthly').hide();
+        $('#panelAbsentee').hide();
+
+        if (currentType === 'Detail') {
+            $('#panelDetail').show();
+            $('.date-filter').show();
+            $('.month-filter').hide();
+            tableDetail.ajax.reload();
+        } else if (currentType === 'Monthly') {
+            $('#panelMonthly').show();
+            $('.date-filter').hide();
+            $('.month-filter').show();
+            tableMonthly.ajax.reload();
+        } else {
+            $('#panelAbsentee').show();
+            $('.date-filter').show();
+            $('.month-filter').hide();
+            tableAbsentee.ajax.reload();
+        }
+    });
+
+    // ----------------------------------------------------------------
+    //  Common AJAX data builder
+    // ----------------------------------------------------------------
+    function ajaxData(d) {
+        d.reportType = currentType;
+        d.dateFrom   = $('#dateFrom').val();
+        d.dateTo     = $('#dateTo').val();
+        d.employeeId = $('#fEmployee').val();
+        d.employeeName = $('#fEmpName').val();
+        d.department = $('#fDept').val();
+        d.location   = $('#fLocation').val();
+        d.month      = $('#fMonth').val();
+        d.year       = $('#fYear').val();
+        return d;
+    }
+
+    function exportUrl(format) {
+        return '/HR/AttendanceReport/Export' + format
+            + '?reportType=' + encodeURIComponent(currentType)
+            + '&dateFrom='   + encodeURIComponent($('#dateFrom').val())
+            + '&dateTo='     + encodeURIComponent($('#dateTo').val())
+            + '&employeeId=' + encodeURIComponent($('#fEmployee').val())
+            + '&employeeName=' + encodeURIComponent($('#fEmpName').val())
+            + '&department=' + encodeURIComponent($('#fDept').val())
+            + '&location='   + encodeURIComponent($('#fLocation').val())
+            + '&month='      + encodeURIComponent($('#fMonth').val())
+            + '&year='       + encodeURIComponent($('#fYear').val());
+    }
+
+    // ----------------------------------------------------------------
+    //  DETAIL TABLE
+    // ----------------------------------------------------------------
+    var tableDetail = $('#attTable').DataTable({
+        processing : true,
+        serverSide : true,
+        ajax: {
+            url  : '/HR/AttendanceReport/GetReportData',
+            type : 'POST',
+            data : ajaxData,
+            error: function (xhr, err) { console.error('Detail AJAX error:', err); }
+        },
+        columns: [
+            { data: 'employeeId',      defaultContent: '' },
+            { data: 'employeeName',    defaultContent: '' },
+            { data: 'department',      defaultContent: 'N/A' },
+            { data: 'location',        defaultContent: 'N/A' },
+            { data: 'dateLabel',       defaultContent: '' },
+            { data: 'checkInLabel',    defaultContent: 'Absent' },
+            { data: 'checkOutLabel',   defaultContent: '—' },
+            { data: 'totalHoursLabel', defaultContent: 'N/A' },
+            {
+                data: 'isLate',
+                render: function (data, type, row) {
+                    if (row.isAbsent)
+                        return '<span class="badge-absent">Absent</span>';
+                    return data
+                        ? '<span class="badge-late">Yes</span>'
+                        : '<span class="badge-ok">No</span>';
+                },
+                className: 'text-center'
+            },
+            {
+                data: 'overtimeLabel',
+                defaultContent: '—',
+                render: function (data, type, row) {
+                    if (!row.overtimeHours || row.overtimeHours <= 0)
+                        return '<span style="color:#aaa;">—</span>';
+                    return '<span class="badge-ot">' + data + '</span>';
+                },
+                className: 'text-center'
+            }
+        ],
+        pageLength : 25,
+        lengthMenu : [[10, 25, 50, 100, 200], [10, 25, 50, 100, 200]],
+        order      : [[4, 'asc'], [0, 'asc']],
+        dom: '<"row"<"col-sm-4"l><"col-sm-8"f>>'
+           + '<"row"<"col-sm-12"tr>>'
+           + '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+        language: {
+            processing : '<i class="fas fa-spinner fa-spin"></i> Loading...',
+            emptyTable : 'No attendance records found for the selected filters.',
+            zeroRecords: 'No records match the current filter.'
+        }
+    });
+
+    // ----------------------------------------------------------------
+    //  MONTHLY TABLE
+    // ----------------------------------------------------------------
+    var tableMonthly = $('#attTableMonthly').DataTable({
+        processing : true,
+        serverSide : true,
+        ajax: {
+            url  : '/HR/AttendanceReport/GetReportData',
+            type : 'POST',
+            data : ajaxData,
+            error: function (xhr, err) { console.error('Monthly AJAX error:', err); }
+        },
+        columns: [
+            { data: 'employeeId',        defaultContent: '' },
+            { data: 'employeeName',      defaultContent: '' },
+            { data: 'department',        defaultContent: 'N/A' },
+            { data: 'location',          defaultContent: 'N/A' },
+            { data: 'monthLabel',        defaultContent: '' },
+            { data: 'totalDays',         defaultContent: '0', className: 'text-center' },
+            { data: 'presentDays',       defaultContent: '0', className: 'text-center' },
+            {
+                data: 'absentDays',
+                defaultContent: '0',
+                className: 'text-center',
+                render: function (data) {
+                    if (data > 0)
+                        return '<span style="color:#dc3545;font-weight:700;">' + data + '</span>';
+                    return data;
+                }
+            },
+            {
+                data: 'lateDays',
+                defaultContent: '0',
+                className: 'text-center',
+                render: function (data) {
+                    if (data > 0)
+                        return '<span style="color:#fd7e14;font-weight:700;">' + data + '</span>';
+                    return data;
+                }
+            },
+            { data: 'totalWorkedLabel',   defaultContent: '—', className: 'text-center' },
+            {
+                data: 'totalOvertimeLabel',
+                defaultContent: '—',
+                className: 'text-center',
+                render: function (data, type, row) {
+                    if (!row.totalOvertimeHours || row.totalOvertimeHours <= 0)
+                        return '<span style="color:#aaa;">—</span>';
+                    return '<span class="badge-ot">' + data + '</span>';
+                }
+            }
+        ],
+        pageLength : 25,
+        lengthMenu : [[10, 25, 50, 100], [10, 25, 50, 100]],
+        order      : [[1, 'asc']],
+        dom: '<"row"<"col-sm-4"l><"col-sm-8"f>>'
+           + '<"row"<"col-sm-12"tr>>'
+           + '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+        language: {
+            processing : '<i class="fas fa-spinner fa-spin"></i> Loading...',
+            emptyTable : 'No monthly data found for the selected filters.'
+        }
+    });
+
+    // ----------------------------------------------------------------
+    //  ABSENTEE TABLE
+    // ----------------------------------------------------------------
+    var tableAbsentee = $('#attTableAbsentee').DataTable({
+        processing : true,
+        serverSide : true,
+        ajax: {
+            url  : '/HR/AttendanceReport/GetReportData',
+            type : 'POST',
+            data : ajaxData,
+            error: function (xhr, err) { console.error('Absentee AJAX error:', err); }
+        },
+        columns: [
+            { data: 'employeeId',   defaultContent: '' },
+            { data: 'employeeName', defaultContent: '' },
+            { data: 'department',   defaultContent: 'N/A' },
+            { data: 'location',     defaultContent: 'N/A' },
+            { data: 'dateLabel',    defaultContent: '' },
+            { data: 'dayName',      defaultContent: '' }
+        ],
+        pageLength : 25,
+        lengthMenu : [[10, 25, 50, 100, 200], [10, 25, 50, 100, 200]],
+        order      : [[4, 'asc'], [0, 'asc']],
+        dom: '<"row"<"col-sm-4"l><"col-sm-8"f>>'
+           + '<"row"<"col-sm-12"tr>>'
+           + '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+        language: {
+            processing : '<i class="fas fa-spinner fa-spin"></i> Loading...',
+            emptyTable : 'No absentee records found for the selected filters.'
+        }
+    });
+
+    // ----------------------------------------------------------------
+    //  Apply / Clear filters
+    // ----------------------------------------------------------------
+    function reloadActive() {
+        if (currentType === 'Detail')    tableDetail.ajax.reload();
+        else if (currentType === 'Monthly')  tableMonthly.ajax.reload();
+        else                             tableAbsentee.ajax.reload();
+    }
+
+    $('#btnApply').on('click', reloadActive);
+
+    $('#dateFrom, #dateTo, #fEmployee, #fDept, #fLocation, #fMonth, #fYear')
+        .on('keypress', function (e) { if (e.which === 13) reloadActive(); });
+
+    $('#btnClear').on('click', function () {
+        $('#dateFrom').val('');
+        $('#dateFromDisplay').val('');
+        $('#dateTo').val('');
+        $('#dateToDisplay').val('');
+        $('#fEmployee').val('');
+        $('#fEmpName').val('');
+        $('#fDept').val('');
+        $('#fLocation').val('');
+        $('#fMonth').val(now.getMonth() + 1);
+        $('#fYear').val(now.getFullYear());
+        reloadActive();
+    });
+
+    // ----------------------------------------------------------------
+    //  Export buttons
+    // ----------------------------------------------------------------
+    $('#btnExcelDetail, #btnExcelMonthly, #btnExcelAbsentee').on('click', function (e) {
+        e.preventDefault();
+        window.location.href = exportUrl('Excel');
+    });
+
+    $('#btnPdfDetail, #btnPdfMonthly, #btnPdfAbsentee').on('click', function (e) {
+        e.preventDefault();
+        window.location.href = exportUrl('Pdf');
+    });
+
+});
+
+var monthNames = ['Jan','Feb','Mar','Apr','May','Jun',
+                  'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatToDisplay(isoValue) {
+    if (!isoValue) return '';
+    var parts = isoValue.split('-');
+    if (parts.length !== 3) return '';
+    return parts[2] + '-' + monthNames[parseInt(parts[1], 10) - 1] + '-' + parts[0];
+}
+
+$('#dateFrom').on('change', function () {
+    $('#dateFromDisplay').val(formatToDisplay($(this).val()));
+});
+
+$('#dateTo').on('change', function () {
+    $('#dateToDisplay').val(formatToDisplay($(this).val()));
+});
+
+// Clicking the display input opens the native date picker
+$('#dateFromDisplay').on('click', function () {
+    $('#dateFrom').trigger('click');
+});
+
+$('#dateToDisplay').on('click', function () {
+    $('#dateTo').trigger('click');
+});
+</script>
+}

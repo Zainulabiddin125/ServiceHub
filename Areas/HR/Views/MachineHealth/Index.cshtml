@@ -1,0 +1,521 @@
+﻿@{
+    ViewData["Title"] = "Machine Health Status";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --navy:       #1e3a5f;
+        --navy-mid:   #24487a;
+        --navy-light: #2d5a96;
+        --online:     #20c763;
+        --online-bg:  #d4f5e2;
+        --offline:    #e53e5a;
+        --offline-bg: #fce4e8;
+        --card-bg:    #ffffff;
+        --border:     #dde3ec;
+        --text-main:  #1a2535;
+        --text-muted: #6b7a94;
+        --shadow:     0 2px 12px rgba(30,58,95,0.10);
+    }
+
+    .health-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .health-card {
+        background: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        padding: 22px 28px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        border-left: 5px solid var(--navy);
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .health-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(30,58,95,0.15);
+    }
+
+    .health-card.card-online  { border-left-color: var(--online); }
+    .health-card.card-offline { border-left-color: var(--offline); }
+    .health-card.card-total   { border-left-color: var(--navy); }
+
+    .health-card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .card-total   .health-card-icon { background: #e8eef8; color: var(--navy); }
+    .card-online  .health-card-icon { background: var(--online-bg); color: var(--online); }
+    .card-offline .health-card-icon { background: var(--offline-bg); color: var(--offline); }
+
+    .hc-label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+    }
+
+    .hc-value {
+        font-size: 34px;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--text-main);
+        font-family: 'Courier New', monospace;
+    }
+
+    .filter-bar {
+        background: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 160px;
+    }
+
+    .filter-group label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--text-muted);
+    }
+
+    .filter-group select,
+    .filter-group input[type="text"] {
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        color: var(--text-main);
+        background: #f7f9fc;
+        outline: none;
+        transition: border-color .15s;
+    }
+
+    .filter-group select:focus,
+    .filter-group input[type="text"]:focus {
+        border-color: var(--navy-light);
+        background: #fff;
+    }
+
+    .table-card {
+        background: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .table-card-header {
+        background: var(--navy);
+        color: #fff;
+        padding: 14px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .table-card-header h5 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .table-card-body { padding: 18px; }
+
+    .badge-online, .badge-offline {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .badge-online  { background: var(--online-bg);  color: #138a4a; }
+    .badge-offline { background: var(--offline-bg); color: #b91c30; }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .dot-online  { background: var(--online); animation: pulse-green 2s infinite; }
+    .dot-offline { background: var(--offline); }
+
+    @@keyframes pulse-green {
+        0%   { box-shadow: 0 0 0 0 rgba(32,199,99,.5); }
+        70%  { box-shadow: 0 0 0 8px rgba(32,199,99,0); }
+        100% { box-shadow: 0 0 0 0 rgba(32,199,99,0); }
+    }
+
+    @@keyframes spin-anim { to { transform: rotate(360deg); } }
+
+    .age-fresh  { color: #138a4a; font-weight: 600; }
+    .age-recent { color: #b08000; font-weight: 600; }
+    .age-stale  { color: #b91c30; font-weight: 600; }
+
+    .btn-refresh {
+        background: transparent;
+        border: 1.5px solid rgba(255,255,255,.5);
+        color: #fff;
+        border-radius: 6px;
+        padding: 5px 14px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .btn-refresh:hover    { background: rgba(255,255,255,.15); border-color: #fff; }
+    .btn-refresh.spinning i { animation: spin-anim .7s linear infinite; }
+
+    .btn-exp {
+        border: none;
+        color: #fff;
+        border-radius: 6px;
+        padding: 5px 14px;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-exp-excel { background: #198754; }
+    .btn-exp-excel:hover { background: #146c43; color: #fff; }
+    .btn-exp-pdf   { background: #dc3545; }
+    .btn-exp-pdf:hover   { background: #b02a37; color: #fff; }
+
+    .live-indicator {
+        font-size: 11px;
+        color: rgba(255,255,255,.7);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 4px;
+    }
+
+    .live-dot-anim {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #20c763;
+        animation: pulse-green 2s infinite;
+        display: inline-block;
+    }
+
+    #machineHealthTable thead th {
+        background: #f0f4fa;
+        color: var(--navy);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+    }
+
+    #machineHealthTable tbody tr:hover { background: #f7f9fd; }
+
+    @@media (max-width: 768px) {
+        .health-cards { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="container-fluid" style="padding: 20px 16px;">
+
+    <!-- Summary Cards -->
+    <div class="health-cards">
+        <div class="health-card card-total">
+            <div class="health-card-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <div>
+                <div class="hc-label">Total Machines</div>
+                <div class="hc-value" id="cntTotal">--</div>
+            </div>
+        </div>
+        <div class="health-card card-online">
+            <div class="health-card-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="hc-label">Online</div>
+                <div class="hc-value" id="cntOnline">--</div>
+            </div>
+        </div>
+        <div class="health-card card-offline">
+            <div class="health-card-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div>
+                <div class="hc-label">Offline</div>
+                <div class="hc-value" id="cntOffline">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="filterStatus">Status</label>
+            <select id="filterStatus">
+                <option value="">All Statuses</option>
+                <option value="Online">Online</option>
+                <option value="Offline">Offline</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="filterLocation">Location / Branch</label>
+            <input type="text" id="filterLocation" placeholder="Search location..." />
+        </div>
+        <div class="filter-group">
+            <label for="filterMachine">Machine</label>
+            <input type="text" id="filterMachine" placeholder="Name or ID..." />
+        </div>
+        <div class="filter-group" style="flex-direction: row; align-items: flex-end; gap: 8px; min-width: auto;">
+            <button class="btn btn-primary btn-sm" id="btnApplyFilters" style="height:34px; padding: 0 14px;">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="btnClearFilters" style="height:34px; padding: 0 14px;">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-card-header">
+            <div>
+                <h5>
+                    <i class="fas fa-heartbeat" style="margin-right:8px;"></i>
+                    Machine Health Status
+                </h5>
+                <div class="live-indicator">
+                    <span class="live-dot-anim"></span>
+                    Auto-refreshes every 60 seconds
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn-refresh" id="btnRefresh">
+                    <i class="fas fa-sync-alt"></i> Refresh Now
+                </button>
+                <a id="btnExportExcel" href="#" class="btn-exp btn-exp-excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+                <a id="btnExportPdf" href="#" class="btn-exp btn-exp-pdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </a>
+            </div>
+        </div>
+        <div class="table-card-body">
+            <table id="machineHealthTable"
+                   class="table table-striped table-bordered table-hover"
+                   style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Machine Name</th>
+                        <th>Machine IP</th>
+                        <th>Port</th>
+                        <th>Location / Branch</th>
+                        <th>Last Communication</th>
+                        <th>Time Ago</th>
+                        <th>Records Read</th>
+                        <th>Last Error</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+
+            if (typeof $.fn.DataTable === 'undefined') {
+                console.error('DataTables library is not loaded.');
+                return;
+            }
+
+            function buildExportUrl(format) {
+                return '/HR/MachineHealth/Export' + format+ '?status='   + encodeURIComponent($('#filterStatus').val()) + '&location=' + encodeURIComponent($('#filterLocation').val()) + '&machine='  + encodeURIComponent($('#filterMachine').val());
+            }
+
+            $('#btnExportExcel').on('click', function (e) {
+                e.preventDefault();
+                window.location.href = buildExportUrl('Excel');
+            });
+
+            $('#btnExportPdf').on('click', function (e) {
+                e.preventDefault();
+                window.location.href = buildExportUrl('Pdf');
+            });
+
+            function renderStatus(isOnline) {
+                if (isOnline) {
+                    return '<span class="badge-online"><span class="status-dot dot-online"></span>Online</span>';
+                }
+                return '<span class="badge-offline"><span class="status-dot dot-offline"></span>Offline</span>';
+            }
+
+            function ageClass(label) {
+                if (!label || label === 'Never connected' || label === 'Never') return 'age-stale';
+                if (label.indexOf('min ago') !== -1 || label === 'Just now') return 'age-fresh';
+                if (label.indexOf('hr ago') !== -1) {
+                    return (parseInt(label, 10) <= 2) ? 'age-recent' : 'age-stale';
+                }
+                return 'age-stale';
+            }
+
+            function animateCount(id, target) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                var current = parseInt(el.textContent, 10) || 0;
+                if (current === target) { el.textContent = target; return; }
+                var step  = Math.max(1, Math.ceil(Math.abs(target - current) / 12));
+                var dir   = target > current ? 1 : -1;
+                var timer = setInterval(function () {
+                    current += dir * step;
+                    if ((dir === 1 && current >= target) || (dir === -1 && current <= target)) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    el.textContent = current;
+                }, 30);
+            }
+
+            var table = $('#machineHealthTable').DataTable({
+                processing : true,
+                serverSide : true,
+                ajax: {
+                    url  : '/HR/MachineHealth/GetHealthData',
+                    type : 'POST',
+                    data : function (d) {
+                        d.statusFilter   = $('#filterStatus').val();
+                        d.locationFilter = $('#filterLocation').val();
+                        d.machineFilter  = $('#filterMachine').val();
+                        return d;
+                    },
+                    dataSrc: function (json) {
+                        if (json.summary) {
+                            animateCount('cntTotal',   json.summary.totalMachines);
+                            animateCount('cntOnline',  json.summary.onlineMachines);
+                            animateCount('cntOffline', json.summary.offlineMachines);
+                        }
+                        return json.data || [];
+                    },
+                    error: function (xhr, error, thrown) {
+                        console.error('MachineHealth AJAX error:', xhr.status, error, thrown);
+                    }
+                },
+                columns: [
+                    {
+                        data     : 'isOnline',
+                        render   : function (data) { return renderStatus(data); },
+                        orderable: false,
+                        width    : '90px'
+                    },
+                    { data: 'machineName',             defaultContent: 'N/A' },
+                    { data: 'machineIP',               defaultContent: 'N/A' },
+                    { data: 'port',                    defaultContent: '', width: '60px' },
+                    { data: 'locationName',            defaultContent: 'N/A' },
+                    { data: 'lastCommunication',       defaultContent: 'Never' },
+                    {
+                        data          : 'lastCommunicationLabel',
+                        defaultContent: 'Never',
+                        render        : function (data) {
+                            return '<span class="' + ageClass(data || '') + '">'
+                                 + (data || 'Never') + '</span>';
+                        }
+                    },
+                    { data: 'lastRecordsRead', defaultContent: '0', className: 'text-center' },
+                    {
+                        data          : 'lastErrorMessage',
+                        defaultContent: '',
+                        render        : function (data) {
+                            if (!data) return '<span style="color:#aaa;">None</span>';
+                            var safe  = $('<div>').text(data).html();
+                            var trunc = safe.length > 50 ? safe.substring(0, 50) + '...' : safe;
+                            return '<span title="' + safe + '" style="color:#b91c30;font-size:12px;">'
+                                 + trunc + '</span>';
+                        }
+                    }
+                ],
+                pageLength : 25,
+                lengthMenu : [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order      : [[0, 'asc']],
+                dom        : '<"row"<"col-sm-4"l><"col-sm-8"f>>'
+                           + '<"row"<"col-sm-12"tr>>'
+                           + '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+                language: {
+                    processing : '<i class="fas fa-spinner fa-spin"></i> Loading machine status...',
+                    emptyTable : 'No machines found.',
+                    zeroRecords: 'No machines match the current filter.'
+                }
+            });
+
+            $('#btnApplyFilters').on('click', function () {
+                table.ajax.reload();
+            });
+
+            $('#filterStatus, #filterLocation, #filterMachine').on('keypress', function (e) {
+                if (e.which === 13) table.ajax.reload();
+            });
+
+            $('#btnClearFilters').on('click', function () {
+                $('#filterStatus').val('');
+                $('#filterLocation').val('');
+                $('#filterMachine').val('');
+                table.ajax.reload();
+            });
+
+            $('#btnRefresh').on('click', function () {
+                var btn = $(this);
+                btn.addClass('spinning').prop('disabled', true);
+                table.ajax.reload(function () {
+                    btn.removeClass('spinning').prop('disabled', false);
+                });
+            });
+
+            setInterval(function () {
+                table.ajax.reload(null, false);
+            }, 60000);
+
+        });
+    </script>
+}
