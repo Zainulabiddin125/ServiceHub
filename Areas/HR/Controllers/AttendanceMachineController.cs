@@ -1,9 +1,11 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceHub.Areas.HR.Models;
 using ServiceHub.Data;
+using System.Security.Claims;
 
 namespace ServiceHub.Areas.HR.Controllers
 {
@@ -12,9 +14,16 @@ namespace ServiceHub.Areas.HR.Controllers
     public class AttendanceMachineController : Controller
     {
         private readonly ServiceHubContext _dbcontext;
-        public AttendanceMachineController(ServiceHubContext context)
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<AttendanceMachineController> _logger;
+
+        public AttendanceMachineController(ServiceHubContext context,
+            IHttpClientFactory httpClientFactory,
+            ILogger<AttendanceMachineController> logger)
         {
             _dbcontext = context;
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -212,6 +221,135 @@ namespace ServiceHub.Areas.HR.Controllers
         private bool AttendanceMachineExists(int id)
         {
             return _dbcontext.AttendenceMachines.Any(e => e.Id == id);
+        }
+
+        // ---------------------------------------------------------------
+        //  FORMAT MACHINE  (Admin only)
+        // ---------------------------------------------------------------
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> FormatMachine([FromBody] FormatMachineApiRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.MachineIP))
+                return BadRequest(new { success = false, message = "MachineIP is required." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            var userName = User.Identity?.Name ?? "";
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("EmployeeApi");
+                var payload = new
+                {
+                    MachineIP = request.MachineIP,
+                    UserId = userId,
+                    UserName = userName
+                };
+
+                HttpResponseMessage response;
+                string responseBody = null;
+                try
+                {
+                    response = await client.PostAsJsonAsync("api/format", payload);
+                    responseBody = await response.Content.ReadAsStringAsync();
+                }
+                catch (Exception httpEx)
+                {
+                    _logger.LogError(httpEx, "HTTP request to Windows service failed for FormatMachine {IP}", request.MachineIP);
+
+                    // Log failure in DB even when service is unreachable
+                    var machine = await _dbcontext.AttendenceMachines
+                        .FirstOrDefaultAsync(m => m.IpAddress == request.MachineIP);
+                    if (machine != null)
+                    {
+                        _dbcontext.MachineFormatLogs.Add(new MachineFormatLog
+                        {
+                            MachineId = machine.Id,
+                            MachineIP = request.MachineIP,
+                            MachineName = machine.Name,
+                            Status = "Failed",
+                            ErrorMessage = $"Windows service unreachable: {httpEx.Message}",
+                            RequestedByUserId = userId,
+                            RequestedByUserName = userName,
+                            RequestedAt = DateTime.Now,
+                            ExecutedAt = DateTime.Now
+                        });
+                        await _dbcontext.SaveChangesAsync();
+                    }
+
+                    return StatusCode(502, new { success = false, message = "Failed to contact Windows service." });
+                }
+
+                bool success = response.IsSuccessStatusCode;
+                string message = responseBody;
+
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(responseBody ?? "{}");
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("message", out var msg))
+                        message = msg.GetString();
+                    if (root.TryGetProperty("success", out var succ))
+                        success = succ.GetBoolean();
+                }
+                catch { /* keep raw response */ }
+
+                // Log in ASP.NET Core DB as well (audit trail)
+                var machineDef = await _dbcontext.AttendenceMachines
+                    .FirstOrDefaultAsync(m => m.IpAddress == request.MachineIP);
+                if (machineDef != null)
+                {
+                    _dbcontext.MachineFormatLogs.Add(new MachineFormatLog
+                    {
+                        MachineId = machineDef.Id,
+                        MachineIP = request.MachineIP,
+                        MachineName = machineDef.Name,
+                        Status = success ? "Success" : "Failed",
+                        ErrorMessage = success ? null : message,
+                        RequestedByUserId = userId,
+                        RequestedByUserName = userName,
+                        RequestedAt = DateTime.Now,
+                        ExecutedAt = DateTime.Now
+                    });
+                    await _dbcontext.SaveChangesAsync();
+                }
+
+                return Json(new { success, message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "FormatMachine failed for {IP}", request.MachineIP);
+                return StatusCode(500, new { success = false, message = "Internal error." });
+            }
+        }
+
+        // ---------------------------------------------------------------
+        //  FORMAT LOGS  (Admin only)
+        // ---------------------------------------------------------------
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetFormatLogs(int machineId)
+        {
+            var logs = await _dbcontext.MachineFormatLogs
+                .Where(l => l.MachineId == machineId)
+                .OrderByDescending(l => l.RequestedAt)
+                .Take(20)
+                .Select(l => new
+                {
+                    l.Id,
+                    l.Status,
+                    l.ErrorMessage,
+                    l.RequestedByUserName,
+                    requestedAt = l.RequestedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+                .ToListAsync();
+
+            return Json(logs);
+        }
+
+        public class FormatMachineApiRequest
+        {
+            public string MachineIP { get; set; }
         }
         [HttpGet]
         public async Task<IActionResult> ExportAttendanceMachines(string search = null, string sortColumn = null, string sortDirection = null)

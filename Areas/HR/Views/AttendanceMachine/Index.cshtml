@@ -96,6 +96,61 @@
     </div>
 </div>
 
+<!-- Format Machine Confirmation Modal -->
+<div class="modal fade" id="formatMachineModal" tabindex="-1" aria-labelledby="formatMachineModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="formatMachineModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Format Machine — Are you sure?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-bold text-danger">
+                    This will permanently delete ALL users, fingerprints, and attendance records from the machine.
+                </p>
+                <p>
+                    Machine: <strong id="formatMachineName"></strong><br>
+                    IP: <strong id="formatMachineIP"></strong>
+                </p>
+                <p>This action <strong>cannot be undone</strong>. The activity will be logged.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmFormatBtn">
+                    <i class="fas fa-trash-alt me-1"></i> Yes, Format Machine
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Format Logs Modal -->
+<div class="modal fade" id="formatLogsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-history me-2"></i> Format History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm table-bordered" id="formatLogsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Status</th>
+                            <th>Performed By</th>
+                            <th>Date / Time</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formatLogsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         $(document).ready(function () {
@@ -125,11 +180,22 @@
                         }
                     },
                     {
-                        "data": "id",
-                        "render": function (data) {
-                             return `<a href="/HR/AttendanceMachine/Edit/${data}" class="btn btn-sm btn-primary">
-                                     <i class="fas fa-edit"></i> Edit
-                                     </a>`;
+                        "data": null,
+                        "render": function (data, type, row) {
+                            let html = `<a href="/HR/AttendanceMachine/Edit/${row.id}" class="btn btn-sm btn-primary me-1">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>`;
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <text>
+                            html += `<button class="btn btn-sm btn-danger btn-format-machine"
+                                        data-ip="${row.ipAddress}" data-name="${row.name}" data-id="${row.id}"
+                                        title="Format Machine">
+                                        <i class="fas fa-trash-alt"></i> Format
+                                     </button>`;
+                                </text>
+                            }
+                            return html;
                         }
                     }
                 ],
@@ -178,6 +244,44 @@
                         className: 'btn btn-dt-warning btn-sm'
                     }
                 ]
+            });
+        });
+
+        // ── Format Machine ──────────────────────────────────────────────
+        var _formatIP = '', _formatId = 0;
+
+        $(document).on('click', '.btn-format-machine', function () {
+            _formatIP = $(this).data('ip');
+            _formatId  = $(this).data('id');
+            $('#formatMachineName').text($(this).data('name'));
+            $('#formatMachineIP').text(_formatIP);
+            new bootstrap.Modal(document.getElementById('formatMachineModal')).show();
+        });
+
+        $('#confirmFormatBtn').on('click', function () {
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Formatting...');
+
+            $.ajax({
+                url: '/HR/AttendanceMachine/FormatMachine',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ MachineIP: _formatIP }),
+                success: function (res) {
+                    bootstrap.Modal.getInstance(document.getElementById('formatMachineModal')).hide();
+                    alert(res.success
+                        ? '✅ ' + res.message
+                        : '❌ ' + res.message);
+                },
+                error: function (xhr) {
+                    bootstrap.Modal.getInstance(document.getElementById('formatMachineModal')).hide();
+                    var msg = 'Format failed.';
+                    try { msg = JSON.parse(xhr.responseText).message || msg; } catch(e) {}
+                    alert('❌ ' + msg);
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt me-1"></i> Yes, Format Machine');
+                }
             });
         });
     </script>
