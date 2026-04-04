@@ -54,8 +54,6 @@ namespace ServiceHub.Areas.HR.Controllers
                 return StatusCode(500, "Error getting machine IPs: " + ex.Message);
             }
         }
-
-
         // Endpoint to transfer employees
 
         [HttpPost]
@@ -255,7 +253,6 @@ namespace ServiceHub.Areas.HR.Controllers
         public class EmployeeTransfer
         {
             public string EmpNo { get; set; }
-            // EmpName is optional - transfers can be done with EmpNo only
             public string? EmpName { get; set; }
         }
     }

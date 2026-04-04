@@ -1,0 +1,312 @@
+@model ServiceHub.Areas.HR.Models.EmployeeDetailViewModel
+
+@{
+    ViewData["Title"] = $"Employee Profile – {Model.EmpNo}";
+}
+
+<style>
+    .profile-header  { background: linear-gradient(135deg,#0d6efd 0%,#0a58ca 100%); color:#fff; border-radius:10px; padding:24px 28px; margin-bottom:20px; }
+    .section-card    { border-left:4px solid #0d6efd; margin-bottom:18px; }
+    .section-card .card-header { background:#f8f9fa; font-weight:600; font-size:0.95rem; letter-spacing:.5px; }
+    .info-label      { color:#6c757d; font-size:0.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+    .info-value      { font-size:1rem; font-weight:500; }
+    .fraud-banner    { background:#dc3545; color:#fff; border-radius:8px; padding:14px 18px; margin-bottom:18px; }
+    .finger-chip     { display:inline-block; background:#e9ecef; border-radius:12px; padding:3px 10px; margin:2px; font-size:.78rem; }
+    .finger-chip.active { background:#d1e7dd; color:#0f5132; border:1px solid #badbcc; }
+    .machine-card    { border:1px solid #dee2e6; border-radius:8px; padding:14px; margin-bottom:12px; }
+    .machine-card .machine-name { font-weight:600; font-size:.95rem; }
+    .stat-pill       { display:inline-flex; align-items:center; gap:6px; background:#f8f9fa; border-radius:20px; padding:4px 14px; font-size:.85rem; border:1px solid #dee2e6; margin:3px; }
+    .punch-in  { color:#198754; font-weight:600; }
+    .punch-out { color:#dc3545; font-weight:600; }
+    .back-btn { margin-bottom:16px; }
+</style>
+
+<!-- Back button -->
+<div class="back-btn">
+    <a href="/HR/EmployeeDetailReport" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to List
+    </a>
+</div>
+
+<!-- ── Fraud Alert Banner ──────────────────────────────────────────── -->
+@if (Model.FraudAlert)
+{
+    <div class="fraud-banner d-flex align-items-center gap-3">
+        <i class="fas fa-exclamation-triangle fa-2x"></i>
+        <div>
+            <div class="fw-bold fs-6">⚠ Fingerprint Fraud Alert</div>
+            <div>@Model.FraudReason</div>
+        </div>
+    </div>
+}
+
+<!-- ── Profile Header ─────────────────────────────────────────────── -->
+<div class="profile-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <div class="fs-3 fw-bold">
+            <i class="fas fa-user-circle me-2"></i>@Model.EmpName
+        </div>
+        <div class="opacity-75 mt-1">
+            Employee ID: <strong>@Model.EmpNo</strong>
+            &nbsp;|&nbsp;
+            @if (Model.IsActive)
+            { <span class="badge bg-success ms-1">Active</span> }
+            else
+            { <span class="badge bg-danger ms-1">Inactive</span> }
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/HR/EmployeeDetailReport/ExportPdf?empNo=@Uri.EscapeDataString(Model.EmpNo)"
+           class="btn btn-light btn-sm">
+            <i class="fas fa-file-pdf text-danger me-1"></i> Export PDF
+        </a>
+        <a href="/HR/EmployeeDetailReport/ExportExcel?empNo=@Uri.EscapeDataString(Model.EmpNo)"
+           class="btn btn-light btn-sm">
+            <i class="fas fa-file-excel text-success me-1"></i> Export Excel
+        </a>
+    </div>
+</div>
+
+<div class="row">
+
+    <!-- ── LEFT COLUMN ─────────────────────────────────────── -->
+    <div class="col-lg-5">
+
+        <!-- Basic Information -->
+        <div class="card section-card">
+            <div class="card-header">
+                <i class="fas fa-id-card text-primary me-2"></i> Basic Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="info-label">Employee ID</div>
+                        <div class="info-value">@Model.EmpNo</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">@Model.EmpName</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Department</div>
+                        <div class="info-value">@Model.Department</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Designation</div>
+                        <div class="info-value">@Model.Designation</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-label">Branch / Store</div>
+                        <div class="info-value">@Model.Branch</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="card section-card">
+            <div class="card-header">
+                <i class="fas fa-cog text-secondary me-2"></i> System Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="info-label">Enrollment Date</div>
+                        <div class="info-value">
+                            @(Model.EnrollmentDate.HasValue
+                                ? Model.EnrollmentDate.Value.ToString("dd-MMM-yyyy HH:mm")
+                                : "N/A")
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-label">Last Attendance</div>
+                        <div class="info-value">
+                            @if (Model.LastAttendance.HasValue)
+                            {
+                                @Model.LastAttendance.Value.ToString("dd-MMM-yyyy HH:mm")
+                                <span class="text-muted small ms-2">(@Model.LastAttendanceMachine)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Never</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Status</div>
+                        <div class="info-value">
+                            @if (Model.IsActive)
+                            { <span class="badge bg-success">Active</span> }
+                            else
+                            { <span class="badge bg-danger">Inactive</span> }
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Created By</div>
+                        <div class="info-value small">@(Model.CreatedBy ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /LEFT -->
+
+    <!-- ── RIGHT COLUMN ────────────────────────────────────── -->
+    <div class="col-lg-7">
+
+        <!-- Biometric Overview -->
+        <div class="card section-card">
+            <div class="card-header">
+                <i class="fas fa-fingerprint text-success me-2"></i> Biometric Information
+            </div>
+            <div class="card-body">
+                <!-- Stat Pills -->
+                <div class="mb-3">
+                    <span class="stat-pill">
+                        <i class="fas fa-fingerprint text-primary"></i>
+                        <strong>@Model.TotalFingersEnrolled</strong> Total Fingers Enrolled
+                    </span>
+                    <span class="stat-pill @(Model.UniqueFingersAcrossAllMachines > 10 ? "border-danger" : "")">
+                        <i class="fas fa-list-ol @(Model.UniqueFingersAcrossAllMachines > 10 ? "text-danger" : "text-info")"></i>
+                        <strong>@Model.UniqueFingersAcrossAllMachines</strong> Unique Finger Indexes
+                    </span>
+                    <span class="stat-pill">
+                        <i class="fas fa-desktop text-warning"></i>
+                        <strong>@Model.AssignedMachines.Count</strong> Machine(s)
+                    </span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="info-label">Biometric Status</div>
+                        <div class="info-value">
+                            @if (Model.BiometricStatus == "Active")
+                            { <span class="badge bg-success fs-6"><i class="fas fa-check me-1"></i>Active</span> }
+                            else
+                            { <span class="badge bg-secondary fs-6"><i class="fas fa-times me-1"></i>Not Enrolled</span> }
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-label">Password Set</div>
+                        <div class="info-value">
+                            @if (Model.PasswordSet)
+                            { <span class="badge bg-success">Yes</span> }
+                            else
+                            { <span class="badge bg-secondary">No</span> }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fraud Alert inline -->
+                @if (Model.FraudAlert)
+                {
+                    <div class="alert alert-danger py-2 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Fraud Alert:</strong> @Model.FraudReason
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Per-Machine Breakdown -->
+        @if (Model.AssignedMachines.Any())
+        {
+            <div class="card section-card">
+                <div class="card-header">
+                    <i class="fas fa-desktop text-warning me-2"></i>
+                    Machine Fingerprint Breakdown
+                </div>
+                <div class="card-body pb-1">
+                    @foreach (var m in Model.AssignedMachines)
+                    {
+                        <div class="machine-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="machine-name"><i class="fas fa-server me-1 text-primary"></i>@m.MachineName</span>
+                                    <span class="text-muted small ms-2">@m.MachineIP</span>
+                                </div>
+                                <div>
+                                    @if (m.IsActive)
+                                    { <span class="badge bg-success">Active</span> }
+                                    else
+                                    { <span class="badge bg-secondary">Inactive</span> }
+                                </div>
+                            </div>
+                            <div class="mb-1">
+                                <span class="info-label me-2">Fingers Enrolled:</span>
+                                <span class="badge bg-primary">@m.FingersEnrolled</span>
+                            </div>
+                            @if (m.FingerNames != "—")
+                            {
+                                <div class="mt-2">
+                                    @foreach (var fn in m.FingerNames.Split(", "))
+                                    {
+                                        <span class="finger-chip active"><i class="fas fa-fingerprint me-1"></i>@fn</span>
+                                    }
+                                </div>
+                            }
+                            @if (m.EnrollmentDate.HasValue)
+                            {
+                                <div class="text-muted small mt-2">
+                                    <i class="fas fa-calendar me-1"></i>Enrolled: @m.EnrollmentDate.Value.ToString("dd-MMM-yyyy HH:mm")
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div><!-- /RIGHT -->
+</div><!-- /row -->
+
+<!-- ── Recent Attendance Table ────────────────────────────────────── -->
+<div class="card section-card mt-2">
+    <div class="card-header">
+        <i class="fas fa-clock text-info me-2"></i> Recent Attendance (Last 10 Punches)
+    </div>
+    <div class="card-body p-0">
+        @if (Model.RecentAttendance.Any())
+        {
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Date &amp; Time</th>
+                        <th>Machine</th>
+                        <th>IP Address</th>
+                        <th>Direction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int punchNum = 1; }
+                    @foreach (var punch in Model.RecentAttendance)
+                    {
+                        <tr>
+                            <td>@punchNum</td>
+                            <td>@punch.SwapTime?.ToString("dd-MMM-yyyy HH:mm:ss")</td>
+                            <td>@punch.MachineName</td>
+                            <td><code>@punch.MachineIP</code></td>
+                            <td>
+                                @if (punch.Direction == "In")
+                                { <span class="punch-in"><i class="fas fa-sign-in-alt me-1"></i>In</span> }
+                                else if (punch.Direction == "Out")
+                                { <span class="punch-out"><i class="fas fa-sign-out-alt me-1"></i>Out</span> }
+                                else
+                                { <span class="text-muted">—</span> }
+                            </td>
+                        </tr>
+                        punchNum++;
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                <p>No attendance records found for this employee.</p>
+            </div>
+        }
+    </div>
+</div>

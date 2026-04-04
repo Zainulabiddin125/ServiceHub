@@ -20,6 +20,7 @@ public class ServiceHubContext : IdentityDbContext<ApplicationUser>
     public DbSet<ForceSyncLog> ForceSyncLogs { get; set; }
     public DbSet<Store> Stores { get; set; }
     public DbSet<MachineFormatLog> MachineFormatLogs { get; set; }
+    public DbSet<EmployeeBiometricLog> EmployeeBiometricLogs { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);        

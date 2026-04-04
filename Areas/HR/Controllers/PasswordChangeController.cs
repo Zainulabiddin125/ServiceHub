@@ -30,9 +30,7 @@ namespace ServiceHub.Areas.HR.Controllers
             ViewBag.IsTransferWindowOpen = _timeWindowService.IsTransferWindowOpen();
             ViewBag.NextWindowChange = _timeWindowService.GetNextWindowChange()?.TotalMilliseconds;
             return View();
-        }
-
-        
+        }       
 
         [HttpGet]
         public async Task<IActionResult> GetMachinePort(string ip)
@@ -51,7 +49,6 @@ namespace ServiceHub.Areas.HR.Controllers
             {
                 return StatusCode(403, new { success = false, message = _timeWindowService.GetTransferWindowMessage() });
             }
-
             using (var client = new HttpClient())
             {
                 var response = await client.PostAsJsonAsync("http://localhost:5000/api/updatepassword/", request);
