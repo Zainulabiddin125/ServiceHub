@@ -389,6 +389,18 @@ $(function () {
     $('#fMonth').val(now.getMonth() + 1);
     $('#fYear').val(now.getFullYear());
 
+     // Set default date range: from = first day of current month, to = today
+    function padTwo(n) { return n < 10 ? '0' + n : '' + n; }
+
+    var todayIso    = now.getFullYear() + '-' + padTwo(now.getMonth() + 1) + '-' + padTwo(now.getDate());
+    var firstDayIso = now.getFullYear() + '-' + padTwo(now.getMonth() + 1) + '-01';
+
+    $('#dateFrom').val(firstDayIso);
+    $('#dateFromDisplay').val(formatToDisplay(firstDayIso));
+
+    $('#dateTo').val(todayIso);
+    $('#dateToDisplay').val(formatToDisplay(todayIso));
+
     // ----------------------------------------------------------------
     //  Tab switching
     // ----------------------------------------------------------------

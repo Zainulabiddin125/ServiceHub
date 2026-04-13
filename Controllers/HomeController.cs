@@ -88,9 +88,10 @@ namespace ServiceHub.Controllers
             else if (status == "inactive")
                 filteredMachines = filteredMachines.Where(m => !m.IsActive);
 
-            var filteredIPs = !string.IsNullOrEmpty(machineIP)
-                ? new List<string> { machineIP }
-                : filteredMachines.Select(m => m.IpAddress).ToList();
+            //var filteredIPs = !string.IsNullOrEmpty(machineIP)
+            //    ? new List<string> { machineIP }
+            //    : filteredMachines.Select(m => m.IpAddress).ToList();
+            var filteredIPs = !string.IsNullOrEmpty(machineIP) ? new string[] { machineIP } : filteredMachines.Select(m => m.IpAddress).ToArray();
 
             // ── Connection logs (today) ─────────────────────────────────
             var connLogs = _db.AttendenceMachineConnectionLogs
@@ -146,7 +147,7 @@ namespace ServiceHub.Controllers
             }
 
             // ── Per-machine breakdown (donut chart) ──────────────────────
-            var machDict = allMachines.ToDictionary(m => m.IpAddress ?? "", m => m.Name);
+            var machDict = allMachines.GroupBy(m => m.IpAddress ?? "").ToDictionary(g => g.Key, g => g.First().Name ?? "");
             var machBreak = swapQuery
                 .Where(r => r.Machine_IP != null)
                 .GroupBy(r => r.Machine_IP!)
@@ -159,23 +160,40 @@ namespace ServiceHub.Controllers
             var mCounts = machBreak.Select(x => x.Count).ToList();
 
             // ── Recent activity (last 15 punches) ────────────────────────
+            //var recent = _db.HR_Swap_Record.AsNoTracking()
+            //    .Where(r => r.Swap_Time != null)
+            //    .OrderByDescending(r => r.Swap_Time)
+            //    .Take(15)
+            //    .ToList()
+            //    .Select(r =>
+            //    {
+            //        machDict.TryGetValue(r.Machine_IP ?? "", out var mName);
+            //        return new RecentActivityRow
+            //        {
+            //            EmpNo       = r.Emp_No ?? "",
+            //            EmpName     = r.Emp_Name ?? "",
+            //            SwapTime    = r.Swap_Time,
+            //            MachineName = mName ?? r.Machine_IP ?? "",
+            //            Direction   = r.Shift_In == true ? "In" : r.Shift_Out == true ? "Out" : "–"
+            //        };
+            //    }).ToList();
             var recent = _db.HR_Swap_Record.AsNoTracking()
-                .Where(r => r.Swap_Time != null)
-                .OrderByDescending(r => r.Swap_Time)
-                .Take(15)
-                .ToList()
-                .Select(r =>
-                {
-                    machDict.TryGetValue(r.Machine_IP ?? "", out var mName);
-                    return new RecentActivityRow
-                    {
-                        EmpNo       = r.Emp_No ?? "",
-                        EmpName     = r.Emp_Name ?? "",
-                        SwapTime    = r.Swap_Time,
-                        MachineName = mName ?? r.Machine_IP ?? "",
-                        Direction   = r.Shift_In == true ? "In" : r.Shift_Out == true ? "Out" : "–"
-                    };
-                }).ToList();
+                          .Where(r => r.Swap_Time != null)
+                          .OrderByDescending(r => r.PK_line_id)
+                          .Take(20)
+                          .ToList()
+                          .Select(r =>
+                          {
+                              machDict.TryGetValue(r.Machine_IP ?? "", out var mName);
+                              return new RecentActivityRow
+                              {
+                                  EmpNo = r.Emp_No ?? "",
+                                  EmpName = r.Emp_Name ?? "",
+                                  SwapTime = r.Swap_Time,
+                                  MachineName = mName ?? r.Machine_IP ?? "",
+                                  Direction = r.Shift_In == true ? "In" : r.Shift_Out == true ? "Out" : "–"
+                              };
+                          }).ToList();
 
             return new DashboardViewModel
             {
